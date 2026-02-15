@@ -1,4 +1,4 @@
-#Restoran Yönetim Sistemi
+# Restoran Yönetim Sistemi
 
 Bu proje, restoran operasyonlarının dijital ortamda yönetilmesi amacıyla geliştirilmiştir.
 
@@ -6,7 +6,7 @@ Sistem; sipariş yönetimi, masa takibi ve genel restoran süreçlerinin düzenl
 
 ---
 
-##Proje Amacı
+## Proje Amacı
 
 Restoran süreçlerinde:
 
@@ -17,7 +17,7 @@ Restoran süreçlerinde:
 
 ---
 
-##Özellikler
+## Özellikler
 
 - Sipariş yönetimi
 - Masa yönetimi
@@ -27,7 +27,7 @@ Restoran süreçlerinde:
 
 ---
 
-##Geliştiriciler
+## Katılımcılar
 
 - **Ramazan Faruk Acıöz** – 24100011046  
 - **İssa Abakar Mahamat** – 23100011701  
@@ -38,6 +38,6 @@ Restoran süreçlerinde:
 
 ---
 
-##Lisans
+## Lisans
 
 Bu proje eğitim amaçlı geliştirilmiştir.
