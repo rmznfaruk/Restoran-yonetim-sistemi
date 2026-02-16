@@ -22,9 +22,9 @@ Sonuç olarak restoran yönetim sistemleri, restoran işletmelerinde verimliliğ
 
 ## Proje Amacı
 
-Restoran süreçlerinde:
+Restoran  süreçlerinde:
 
-- Siparişlerin yönetilmesi
+- Siparişlerin  yönetilmesi
 - Masa durumlarının takip edilmesi
 - Operasyonel verimliliğin artırılması
 - Düzenli ve kullanıcı dostu sistem oluşturulması
@@ -33,7 +33,7 @@ Restoran süreçlerinde:
 
 ## Özellikler
 
-- Sipariş yönetimi
+- Sipariş  yönetimi
 - Masa yönetimi
 - Menü işlemleri
 - Kullanıcı işlemleri
