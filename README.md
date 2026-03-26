@@ -3,7 +3,7 @@
 - **Ramazan Faruk Acıöz** – 24100011046  
 - **İssa Abakar Mahamat** – 23100011701  
 - **Mehmet Selim Ceran** – 24100011054  
-- **Hüseyin Kaya** – 24100011066  
+- **Hüseyin Kaya** – 24100011066 (Git eğitimi tamamlandı.)
 - **Muhammed Yusuf Uğur** – 24100011043  
 - **Serdar Kara** – 24100011081  
 
@@ -33,3 +33,5 @@ Restoran süreçlerinde:
 ## Lisans
 
 Bu proje eğitim amaçlı geliştirilmiştir.
+
+"Git öğreniyorum!"
