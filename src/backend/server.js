@@ -4,6 +4,9 @@ const cors = require('cors');
 
 const app = express();
 
+const tablesRouter = require('./routes/tables');
+app.use('/api/tables', tablesRouter); //Yusuf ekledi
+
 // Temel Middleware'ler
 app.use(cors());
 app.use(express.json());
