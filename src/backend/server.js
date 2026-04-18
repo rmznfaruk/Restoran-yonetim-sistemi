@@ -41,3 +41,5 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+app.use('/api/orders', require('./routes/orders')); //Yusuf ekledi
