@@ -1,31 +1,54 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
-// Sadece elimizde olan gerçek sayfaları import ediyoruz
+// Sayfaları import ediyoruz (MasaPlani eklendi)
 import KullaniciYonetimi from './pages/KullaniciYonetimi';
 import MenuYonetimi from './pages/MenuYonetimi';
+import MasaPlani from './pages/MasaPlani'; // Yeni eklediğimiz sayfa
 
 function App() {
   return (
     <BrowserRouter>
-      {/* Üst Menü (Rapor alırken sayfalar arası geçişi kolaylaştırır) */}
-      <nav style={{ padding: '15px', background: '#2C3E50', marginBottom: '20px' }}>
-        <Link to="/kullanici" style={{ color: 'white', marginRight: '20px', textDecoration: 'none' }}>👥 Kullanıcı Yönetimi</Link>
-        <Link to="/menu" style={{ color: 'white', textDecoration: 'none' }}>🍔 Menü Yönetimi</Link>
+      {/* Üst Menü - Tasarımı biraz daha modern ve plana uygun hale getirdik */}
+      <nav style={{ 
+        padding: '15px 30px', 
+        background: '#1a1a1a', 
+        borderBottom: '2px solid #FFD700',
+        display: 'flex',
+        gap: '30px'
+      }}>
+        <Link to="/" style={linkStili}>🏠 Ana Sayfa</Link>
+        <Link to="/kullanici" style={linkStili}>👥 Kullanıcı Yönetimi</Link>
+        <Link to="/menu" style={linkStili}>🍔 Menü Yönetimi</Link>
+        <Link to="/masalar" style={linkStili}>🪑 Masa Planı</Link>
       </nav>
 
-      <div style={{ padding: '20px' }}>
-        {/* Rotaları gerçek bileşenlerle bağlıyoruz */}
+      <div style={{ backgroundColor: '#121212', minHeight: 'calc(100vh - 70px)' }}>
         <Routes>
-          {/* Ana sayfa boş kalmasın diye karşılama mesajı koyuyoruz */}
-          <Route path="/" element={<h2 style={{ textAlign: "center" }}>RYS Sistemine Hoş Geldiniz. Lütfen üstteki menüden bir sayfa seçin.</h2>} />
+          {/* Ana sayfa karşılama ekranı */}
+          <Route path="/" element={
+            <div style={{ textAlign: "center", padding: '100px', color: 'white' }}>
+              <h1 style={{ color: '#FFD700', fontSize: '3.5rem' }}>RYS Restoran Otomasyonu</h1>
+              
+            </div>
+          } />
           
+          {/* Sayfa Rotaları */}
           <Route path="/kullanici" element={<KullaniciYonetimi />} />
           <Route path="/menu" element={<MenuYonetimi />} />
+          <Route path="/masalar" element={<MasaPlani />} />
         </Routes>
       </div>
     </BrowserRouter>
   );
 }
+
+// Navlinkler için basit stil objesi
+const linkStili = { 
+  color: 'white', 
+  textDecoration: 'none', 
+  fontWeight: 'bold',
+  fontSize: '1.1rem'
+};
 
 export default App;
