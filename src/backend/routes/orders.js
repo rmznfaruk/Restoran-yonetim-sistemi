@@ -39,3 +39,30 @@ router.post('/', async (req, res) => {
 });
 
 module.exports = router;
+
+// Aktif siparişleri listeleme (KDS ekranı için)
+router.get('/', async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT * FROM siparisler WHERE durum NOT IN ('kapali', 'iptal') ORDER BY olusturma_tarihi ASC"
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Sipariş durumu güncelleme (Örn: Hazırlanıyor -> Hazır)
+router.patch('/:id', async (req, res) => {
+    const { id } = req.params;
+    const { durum } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE siparisler SET durum = $1 WHERE id = $2 RETURNING *',
+            [durum, id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
