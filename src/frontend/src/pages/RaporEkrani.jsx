@@ -6,57 +6,50 @@ const RaporEkrani = () => {
   const [rapor, setRapor] = useState(null);
 
   useEffect(() => {
-    veriGetir();
-  }, [periyot]);
-
-  const veriGetir = async () => {
-    try {
-      const token = localStorage.getItem("token");
-
-      const res = await axios.get(
-        `http://localhost:3001/api/reports?periyot=${periyot}`,
-        {
+    const veriGetir = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`http://localhost:3001/api/reports?periyot=${periyot}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
-      );
+        });
 
-      setRapor(res.data);
-    } catch (err) {
-      console.log("Hata:", err);
-    }
-  };
+        setRapor(res.data);
+      } catch (err) {
+        console.log("Hata:", err);
+      }
+    };
+
+    veriGetir();
+  }, [periyot]);
 
   return (
     <div style={{ padding: "20px" }}>
-      <h2>Rapor Ekranı</h2>
+      <h2>Rapor Ekrani</h2>
 
-      {/* BUTONLAR */}
       <div>
-        <button onClick={() => setPeriyot("gunluk")}>Günlük</button>
-        <button onClick={() => setPeriyot("haftalik")}>Haftalık</button>
-        <button onClick={() => setPeriyot("aylik")}>Aylık</button>
+        <button onClick={() => setPeriyot("gunluk")}>Gunluk</button>
+        <button onClick={() => setPeriyot("haftalik")}>Haftalik</button>
+        <button onClick={() => setPeriyot("aylik")}>Aylik</button>
       </div>
 
-      {/* ÖZET */}
       {rapor && (
         <div style={{ marginTop: "20px" }}>
-          <h3>Özet</h3>
+          <h3>Ozet</h3>
           <p>Toplam Ciro: {rapor.toplamCiro}</p>
-          <p>Sipariş Sayısı: {rapor.siparisSayisi}</p>
+          <p>Siparis Sayisi: {rapor.siparisSayisi}</p>
           <p>Ortalama Tutar: {rapor.ortalamaTutar}</p>
         </div>
       )}
 
-      {/* EN ÇOK SATANLAR */}
       {rapor && (
         <div style={{ marginTop: "20px" }}>
-          <h3>En Çok Satan Ürünler</h3>
+          <h3>En Cok Satan Urunler</h3>
           <table border="1">
             <thead>
               <tr>
-                <th>Ürün</th>
+                <th>Urun</th>
                 <th>Adet</th>
               </tr>
             </thead>
@@ -72,15 +65,14 @@ const RaporEkrani = () => {
         </div>
       )}
 
-      {/* PERSONEL */}
       {rapor && (
         <div style={{ marginTop: "20px" }}>
-          <h3>Personel Performansı</h3>
+          <h3>Personel Performansi</h3>
           <table border="1">
             <thead>
               <tr>
                 <th>Personel</th>
-                <th>Sipariş</th>
+                <th>Siparis</th>
               </tr>
             </thead>
             <tbody>
@@ -95,10 +87,9 @@ const RaporEkrani = () => {
         </div>
       )}
 
-      {/* BUTONLAR */}
       <div style={{ marginTop: "20px" }}>
-        <button>PDF İndir</button>
-        <button>Excel İndir</button>
+        <button>PDF Indir</button>
+        <button>Excel Indir</button>
       </div>
     </div>
   );
