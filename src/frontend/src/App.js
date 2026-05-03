@@ -17,11 +17,11 @@ function App() {
   return (
     <BrowserRouter>
       <nav style={{ padding: "15px", background: "#2C3E50", marginBottom: "20px" }}>
-        <Link to="/" style={navLinkStyle}>Giris (Login)</Link>
-        <Link to="/kullanici" style={navLinkStyle}>Kullanici Yonetimi</Link>
-        <Link to="/menu" style={navLinkStyle}>Menu Yonetimi</Link>
-        <Link to="/masalar" style={navLinkStyle}>Masa Plani</Link>
-        <Link to="/rapor" style={{ color: "white", textDecoration: "none" }}>Rapor Ekrani</Link>
+        <Link to="/" style={navLinkStyle}>Giriş (Login)</Link>
+        <Link to="/kullanici" style={navLinkStyle}>Kullanıcı Yönetimi</Link>
+        <Link to="/menu" style={navLinkStyle}>Menü Yönetimi</Link>
+        <Link to="/masalar" style={navLinkStyle}>Masa Planı</Link>
+        <Link to="/rapor" style={{ color: "white", textDecoration: "none" }}>Rapor Ekranı</Link>
       </nav>
 
       <div style={{ padding: "20px" }}>
@@ -33,7 +33,7 @@ function App() {
           <Route path="/rapor" element={<RaporEkrani />} />
           <Route
             path="/yonetim"
-            element={<h2 style={{ textAlign: "center" }}>Giris basarili! Yonetim paneli yakinda eklenecek.</h2>}
+            element={<h2 style={{ textAlign: "center" }}>Giriş başarılı! Yönetim paneli yakında eklenecek.</h2>}
           />
         </Routes>
       </div>

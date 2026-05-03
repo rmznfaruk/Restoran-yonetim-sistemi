@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 const RaporEkrani = () => {
-  const [periyot, setPeriyot] = useState("gunluk");
+  const [periyot, setPeriyot] = useState("günlük");
   const [rapor, setRapor] = useState(null);
 
   useEffect(() => {
@@ -26,30 +26,30 @@ const RaporEkrani = () => {
 
   return (
     <div style={{ padding: "20px" }}>
-      <h2>Rapor Ekrani</h2>
+      <h2>Rapor Ekranı</h2>
 
       <div>
-        <button onClick={() => setPeriyot("gunluk")}>Gunluk</button>
-        <button onClick={() => setPeriyot("haftalik")}>Haftalik</button>
-        <button onClick={() => setPeriyot("aylik")}>Aylik</button>
+        <button onClick={() => setPeriyot("günlük")}>Günlük</button>
+        <button onClick={() => setPeriyot("haftalık")}>Haftalık</button>
+        <button onClick={() => setPeriyot("aylık")}>Aylık</button>
       </div>
 
       {rapor && (
         <div style={{ marginTop: "20px" }}>
-          <h3>Ozet</h3>
+          <h3>Özet</h3>
           <p>Toplam Ciro: {rapor.toplamCiro}</p>
-          <p>Siparis Sayisi: {rapor.siparisSayisi}</p>
+          <p>Sipariş Sayısı: {rapor.siparisSayisi}</p>
           <p>Ortalama Tutar: {rapor.ortalamaTutar}</p>
         </div>
       )}
 
       {rapor && (
         <div style={{ marginTop: "20px" }}>
-          <h3>En Cok Satan Urunler</h3>
+          <h3>En Çok Satan Ürünler</h3>
           <table border="1">
             <thead>
               <tr>
-                <th>Urun</th>
+                <th>Ürün</th>
                 <th>Adet</th>
               </tr>
             </thead>
@@ -67,12 +67,12 @@ const RaporEkrani = () => {
 
       {rapor && (
         <div style={{ marginTop: "20px" }}>
-          <h3>Personel Performansi</h3>
+          <h3>Personel Performansı</h3>
           <table border="1">
             <thead>
               <tr>
                 <th>Personel</th>
-                <th>Siparis</th>
+                <th>Sipariş</th>
               </tr>
             </thead>
             <tbody>
@@ -88,8 +88,8 @@ const RaporEkrani = () => {
       )}
 
       <div style={{ marginTop: "20px" }}>
-        <button>PDF Indir</button>
-        <button>Excel Indir</button>
+        <button>PDF İndir</button>
+        <button>Excel İndir</button>
       </div>
     </div>
   );

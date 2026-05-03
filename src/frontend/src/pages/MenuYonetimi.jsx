@@ -8,9 +8,9 @@ const MenuYonetimi = () => {
 
   const [urunler, setUrunler] = useState([
     { id: 1, ad: "Adana Kebap", fiyat: "350", kategori: "Ana Yemek", stok: 15 },
-    { id: 2, ad: "Mercimek Corbasi", fiyat: "80", kategori: "Corba", stok: 5 },
-    { id: 3, ad: "Ayran", fiyat: "50", kategori: "Icecek", stok: 0 },
-    { id: 4, ad: "Kunefe", fiyat: "120", kategori: "Tatli", stok: 8 },
+    { id: 2, ad: "Mercimek Çorbası", fiyat: "80", kategori: "Çorba", stok: 5 },
+    { id: 3, ad: "Ayran", fiyat: "50", kategori: "İçecek", stok: 0 },
+    { id: 4, ad: "Künefe", fiyat: "120", kategori: "Tatlı", stok: 8 },
   ]);
   const [modalAcik, setModalAcik] = useState(false);
   const [yeniUrun, setYeniUrun] = useState({ ad: "", fiyat: "", kategori: "Ana Yemek", stok: 0 });
@@ -23,7 +23,7 @@ const MenuYonetimi = () => {
   };
 
   const urunSil = (id) => {
-    if (window.confirm("Bu urunu silmek istediginize emin misiniz?")) {
+    if (window.confirm("Bu ürünü silmek istediğinize emin misiniz?")) {
       setUrunler(urunler.filter((u) => u.id !== id));
     }
   };
@@ -33,11 +33,11 @@ const MenuYonetimi = () => {
       <div className="container shadow-lg p-5 rounded-4" style={{ backgroundColor: "#242424", color: "white" }}>
         <div className="d-flex justify-content-between align-items-center mb-5 border-bottom pb-3">
           <div>
-            <h1 className="display-5 fw-bold text-warning">Restoran Menu Paneli</h1>
-            <p className="text-muted mb-0">Urunlerinizi buradan yonetebilir, fiyat ve stok guncelleyebilirsiniz.</p>
+            <h1 className="display-5 fw-bold text-warning">Restoran Menü Paneli</h1>
+            <p className="text-muted mb-0">Ürünlerinizi buradan yönetebilir, fiyat ve stok güncelleyebilirsiniz.</p>
           </div>
           <button className="btn btn-warning btn-lg fw-bold shadow" onClick={() => setModalAcik(true)}>
-            + Yeni Urun Ekle
+            + Yeni Ürün Ekle
           </button>
         </div>
 
@@ -45,11 +45,11 @@ const MenuYonetimi = () => {
           <table className="table table-dark table-hover align-middle mb-0">
             <thead className="table-light">
               <tr>
-                <th className="ps-4">Urun Adi</th>
+                <th className="ps-4">Ürün Adı</th>
                 <th>Kategori</th>
                 <th>Fiyat</th>
                 <th>Stok Durumu</th>
-                <th className="text-center">Islemler</th>
+                <th className="text-center">İşlemler</th>
               </tr>
             </thead>
             <tbody>
@@ -60,7 +60,7 @@ const MenuYonetimi = () => {
                   <td className="fw-bold">{u.fiyat} TL</td>
                   <td>
                     {u.stok === 0 ? (
-                      <span className="text-danger fw-bold">Tukendi</span>
+                      <span className="text-danger fw-bold">Tükendi</span>
                     ) : u.stok < 10 ? (
                       <span className="text-warning fw-bold">Kritik ({u.stok})</span>
                     ) : (
@@ -68,7 +68,7 @@ const MenuYonetimi = () => {
                     )}
                   </td>
                   <td className="text-center">
-                    <button className="btn btn-outline-info btn-sm me-2">Duzenle</button>
+                    <button className="btn btn-outline-info btn-sm me-2">Düzenle</button>
                     <button className="btn btn-outline-danger btn-sm" onClick={() => urunSil(u.id)}>Sil</button>
                   </td>
                 </tr>
@@ -83,13 +83,13 @@ const MenuYonetimi = () => {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content bg-dark text-white border-warning border-2">
               <div className="modal-header border-secondary">
-                <h5 className="modal-title text-warning">Yeni Urun Ekle</h5>
+                <h5 className="modal-title text-warning">Yeni Ürün Ekle</h5>
                 <button type="button" className="btn-close btn-close-white" onClick={() => setModalAcik(false)} />
               </div>
               <form onSubmit={urunEkle}>
                 <div className="modal-body p-4">
                   <div className="mb-3">
-                    <label className="form-label">Urun Ismi</label>
+                    <label className="form-label">Ürün İsmi</label>
                     <input
                       type="text"
                       className="form-control bg-dark text-white border-secondary"
@@ -104,9 +104,9 @@ const MenuYonetimi = () => {
                       onChange={(e) => setYeniUrun({ ...yeniUrun, kategori: e.target.value })}
                     >
                       <option value="Ana Yemek">Ana Yemek</option>
-                      <option value="Corba">Corba</option>
-                      <option value="Tatli">Tatli</option>
-                      <option value="Icecek">Icecek</option>
+                      <option value="Çorba">Çorba</option>
+                      <option value="Tatlı">Tatlı</option>
+                      <option value="İçecek">İçecek</option>
                     </select>
                   </div>
                   <div className="mb-3">
@@ -130,7 +130,7 @@ const MenuYonetimi = () => {
                 </div>
                 <div className="modal-footer border-secondary">
                   <button type="button" className="btn btn-outline-secondary" onClick={() => setModalAcik(false)}>
-                    Iptal
+                    İptal
                   </button>
                   <button type="submit" className="btn btn-warning px-4 fw-bold">Kaydet</button>
                 </div>

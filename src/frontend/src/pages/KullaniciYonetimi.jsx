@@ -21,7 +21,7 @@ const KullaniciYonetimi = () => {
       });
       setKullanicilar(res.data);
     } catch (err) {
-      console.error("Kullanicilar getirilemedi", err);
+      console.error("Kullanıcılar getirilemedi", err);
     }
   }, [token]);
 
@@ -38,7 +38,7 @@ const KullaniciYonetimi = () => {
       setYeniKullanici({ ad_soyad: "", kullanici_adi: "", sifre: "", rol: "garson" });
       kullaniciListesiniGetir();
     } catch (err) {
-      console.error("Kullanici eklenemedi", err);
+      console.error("Kullanıcı eklenemedi", err);
     }
   };
 
@@ -55,22 +55,22 @@ const KullaniciYonetimi = () => {
       setDuzenlenenId(null);
       kullaniciListesiniGetir();
     } catch (err) {
-      console.error("Guncelleme hatasi", err);
+      console.error("Güncelleme hatası", err);
     }
   };
 
   return (
     <div style={{ padding: "20px" }}>
-      <h2>Kullanici Yonetimi</h2>
+      <h2>Kullanıcı Yönetimi</h2>
 
       <table border="1" cellPadding="10" style={{ width: "100%", marginBottom: "20px", borderCollapse: "collapse" }}>
         <thead>
           <tr>
             <th>Ad Soyad</th>
-            <th>Kullanici Adi</th>
+            <th>Kullanıcı Adı</th>
             <th>Rol</th>
             <th>Durum</th>
-            <th>Islemler</th>
+            <th>İşlemler</th>
           </tr>
         </thead>
         <tbody>
@@ -97,7 +97,7 @@ const KullaniciYonetimi = () => {
                     <option value="garson">Garson</option>
                     <option value="kasiyer">Kasiyer</option>
                     <option value="mutfak">Mutfak</option>
-                    <option value="yonetici">Yonetici</option>
+                    <option value="yonetici">Yönetici</option>
                   </select>
                 ) : (
                   k.rol
@@ -118,7 +118,7 @@ const KullaniciYonetimi = () => {
                 {duzenlenenId === k.id ? (
                   <button onClick={() => kullaniciGuncelle(k.id)}>Kaydet</button>
                 ) : (
-                  <button onClick={() => duzenlemeyiBaslat(k)}>Duzenle</button>
+                  <button onClick={() => duzenlemeyiBaslat(k)}>Düzenle</button>
                 )}
               </td>
             </tr>
@@ -126,7 +126,7 @@ const KullaniciYonetimi = () => {
         </tbody>
       </table>
 
-      <h3>Yeni Kullanici Ekle</h3>
+      <h3>Yeni Kullanıcı Ekle</h3>
       <form onSubmit={yeniKullaniciEkle} style={{ display: "flex", gap: "10px" }}>
         <input
           type="text"
@@ -137,14 +137,14 @@ const KullaniciYonetimi = () => {
         />
         <input
           type="text"
-          placeholder="Kullanici Adi"
+          placeholder="Kullanıcı Adı"
           value={yeniKullanici.kullanici_adi}
           onChange={(e) => setYeniKullanici({ ...yeniKullanici, kullanici_adi: e.target.value })}
           required
         />
         <input
           type="password"
-          placeholder="Sifre"
+          placeholder="Şifre"
           value={yeniKullanici.sifre}
           onChange={(e) => setYeniKullanici({ ...yeniKullanici, sifre: e.target.value })}
           required
@@ -153,7 +153,7 @@ const KullaniciYonetimi = () => {
           <option value="garson">Garson</option>
           <option value="kasiyer">Kasiyer</option>
           <option value="mutfak">Mutfak</option>
-          <option value="yonetici">Yonetici</option>
+          <option value="yonetici">Yönetici</option>
         </select>
         <button type="submit">Kaydet</button>
       </form>
