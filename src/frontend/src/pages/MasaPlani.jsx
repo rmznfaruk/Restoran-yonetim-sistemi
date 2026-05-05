@@ -1,56 +1,57 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+const masaVerileri = [
+  { id: 101, no: "Masa 101", durum: "boş", kapasite: 4 },
+  { id: 102, no: "Masa 102", durum: "dolu", kapasite: 2 },
+  { id: 103, no: "Masa 103", durum: "rezerveli", kapasite: 6 },
+  { id: 104, no: "Masa 104", durum: "temizleniyor", kapasite: 4 },
+  { id: 105, no: "Masa 105", durum: "boş", kapasite: 8 },
+  { id: 106, no: "Masa 106", durum: "dolu", kapasite: 2 },
+];
+
+const durumRengi = {
+  boş: "#2f7d5c",
+  dolu: "#b84d4d",
+  rezerveli: "#d7b66f",
+  temizleniyor: "#6f7b52",
+};
 
 const MasaPlani = () => {
   const navigate = useNavigate();
-  // Yusuf API'yi yazana kadar test verisi kullanıyoruz (Görseldeki talimat)
-  const [masalar, setMasalar] = useState([
-    { id: 101, kapasite: 4, durum: 'bos' },
-    { id: 102, kapasite: 2, durum: 'dolu' },
-    { id: 103, kapasite: 6, durum: 'rezerveli' },
-    { id: 104, kapasite: 4, durum: 'temizleniyor' },
-  ]);
-
-  // Durumlara göre renkleri belirleyen fonksiyon (Görseldeki tablodan)
-  const getRenkler = (durum) => {
-    switch (durum) {
-      case 'bos': return { bg: '#D5F5E3', border: '#1E7E34' };
-      case 'dolu': return { bg: '#FADBD8', border: '#C0392B' };
-      case 'rezerveli': return { bg: '#FEF9E7', border: '#F39C12' };
-      case 'temizleniyor': return { bg: '#EEEEEE', border: '#888888' };
-      default: return { bg: '#FFFFFF', border: '#000000' };
-    }
-  };
+  const [masalar] = useState(masaVerileri);
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2 style={{ color: '#1E7E34' }}>Masa Planı</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '20px' }}>
-        {masalar.map(masa => {
-          const renk = getRenkler(masa.durum);
-          return (
-            <div 
-              key={masa.id} 
-              // Görseldeki yönlendirme kuralı: /siparis?masaId=X
-              onClick={() => navigate(`/siparis?masaId=${masa.id}`)}
-              style={{
-                backgroundColor: renk.bg,
-                border: `3px solid ${renk.border}`,
-                borderRadius: '12px',
-                padding: '20px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                transition: 'transform 0.2s'
-              }}
-            >
-              {/* Görseldeki format: Büyük masa no, kapasite, büyük harf durum */}
-              <h1 style={{ margin: 0, fontSize: '2.5rem' }}>{masa.id}</h1>
-              <p style={{ margin: '5px 0' }}>Kapasite: {masa.kapasite}</p>
-              <h3 style={{ margin: 0, textTransform: 'uppercase' }}>{masa.durum}</h3>
+    <div className="page-stack">
+      <section className="page-header">
+        <div>
+          <p className="eyebrow">Salon görünümü</p>
+          <h1>Masa Planı</h1>
+          <p>Anlık masa durumlarını görün, sipariş akışına doğrudan geçin.</p>
+        </div>
+      </section>
+
+      <section className="cards-grid">
+        {masalar.map((masa) => (
+          <article
+            key={masa.id}
+            className="table-card"
+            style={{ borderTop: `8px solid ${durumRengi[masa.durum]}` }}
+            onClick={() => navigate(`/siparis?masaId=${masa.id}`)}
+          >
+            <p className="eyebrow" style={{ color: "rgba(255,255,255,0.65)" }}>{masa.no}</p>
+            <h3>{masa.kapasite} kişilik</h3>
+            <p style={{ color: "rgba(255,255,255,0.76)" }}>
+              Sipariş ekranına hızlı geçiş için karta dokunun.
+            </p>
+            <div className="table-card__status">
+              <span className="pill" style={{ background: "rgba(255,255,255,0.16)", color: "white" }}>
+                {masa.durum}
+              </span>
             </div>
-          );
-        })}
-      </div>
+          </article>
+        ))}
+      </section>
     </div>
   );
 };

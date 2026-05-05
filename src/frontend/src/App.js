@@ -8,7 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import MasaPlani from "./pages/MasaPlani";
 import MenuYonetimi from "./pages/MenuYonetimi";
 import RaporEkrani from "./pages/RaporEkrani";
-import RezervasyonEkrani from "./pages/RezervasyonEkrani";
+import RezervasyonEkrani from "./pages/RezervasjonEkrani";
 import SiparisGirisi from "./pages/SiparisGirisi";
 
 const navigationItems = [
