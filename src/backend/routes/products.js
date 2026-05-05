@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool');
+const { sendStockAlert } = require('../services/emailService'); //Yusuf ekledi
 
 // 1. Tüm Kategorileri Listeleme (Serdar'ın sol menüsü için)
 router.get('/categories', async (req, res) => {
@@ -47,17 +48,25 @@ router.patch('/:id', async (req, res) => {
     }
 });
 
-// 4. Stok Güncelleme
+// 4. Stok Güncelleme ve E-posta Uyarısı
 router.patch('/:id/stok', async (req, res) => {
     const { id } = req.params;
     const { stok_miktar } = req.body;
     try {
+        // Stoğu güncelle ve güncellenmiş satırı geri döndür
         const result = await pool.query(
             'UPDATE urunler SET stok_miktar = $1 WHERE id = $2 RETURNING *',
             [stok_miktar, id]
         );
-        // Not: Email uyarısı kısmı (emailService) Hafta 10 görevinde buraya eklenecek.
-        res.json(result.rows[0]);
+        
+        const guncelUrun = result.rows[0];
+
+        // Eğer yeni stok, kritik seviyenin altındaysa e-posta gönder
+        if (guncelUrun.stok_miktar <= guncelUrun.kritik_seviye) {
+            sendStockAlert(guncelUrun.ad, guncelUrun.stok_miktar);
+        }
+
+        res.json(guncelUrun);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
