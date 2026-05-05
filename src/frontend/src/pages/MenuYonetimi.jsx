@@ -1,68 +1,78 @@
 import React, { useState } from 'react';
 
 const MenuYonetimi = () => {
-    // Bootstrap'i CDN üzerinden sayfaya basıyoruz (Stillerin kesin çalışması için)
-    const bootstrapLink = document.createElement("link");
-    bootstrapLink.rel = "stylesheet";
-    bootstrapLink.href = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css";
-    document.head.appendChild(bootstrapLink);
-
+    // --- STATE YÖNETİMİ ---
     const [urunler, setUrunler] = useState([
-        { id: 1, ad: 'Adana Kebap', fiyat: '350', kategori: 'Ana Yemek' },
-        { id: 2, ad: 'Mercimek Çorbası', fiyat: '80', kategori: 'Çorba' }
+        { id: 1, ad: 'Adana Kebap', fiyat: '350', kategori: 'Ana Yemek', stok: 15 },
+        { id: 2, ad: 'Mercimek Çorbası', fiyat: '80', kategori: 'Çorba', stok: 5 },
+        { id: 3, ad: 'Ayran', fiyat: '50', kategori: 'İçecek', stok: 0 },
+        { id: 4, ad: 'Künefe', fiyat: '120', kategori: 'Tatlı', stok: 8 }
     ]);
 
     const [modalAcik, setModalAcik] = useState(false);
-    const [yeniUrun, setYeniUrun] = useState({ ad: '', fiyat: '', kategori: 'Ana Yemek' });
+    const [yeniUrun, setYeniUrun] = useState({ ad: '', fiyat: '', kategori: 'Ana Yemek', stok: 0 });
 
-    const urunEkle = (e) => {
+    // --- FONKSİYONLAR ---
+    const handleUrunEkle = (e) => {
         e.preventDefault();
         setUrunler([...urunler, { ...yeniUrun, id: Date.now() }]);
-        setYeniUrun({ ad: '', fiyat: '', kategori: 'Ana Yemek' });
+        setYeniUrun({ ad: '', fiyat: '', kategori: 'Ana Yemek', stok: 0 });
         setModalAcik(false);
     };
 
-    const urunSil = (id) => {
-        if(window.confirm("Bu ürünü silmek istediğine emin misin?")) {
+    const handleUrunSil = (id) => {
+        if (window.confirm("Bu ürünü silmek istediğine emin misin?")) {
             setUrunler(urunler.filter(u => u.id !== id));
         }
     };
 
     return (
-        <div style={{ backgroundColor: '#1a1a1a', minHeight: '100vh', padding: '40px', fontFamily: 'Segoe UI' }}>
-            <div className="container shadow-lg p-5 rounded-4" style={{ backgroundColor: '#242424', color: 'white' }}>
+        <div style={styles.pageWrapper}>
+            <div className="container shadow-lg p-5 rounded-5" style={styles.containerCard}>
                 
-                {/* BAŞLIK KISMI */}
-                <div className="d-flex justify-content-between align-items-center mb-5 border-bottom pb-3">
+                {/* BAŞLIK VE EKLEME BUTONU */}
+                <div className="d-flex justify-content-between align-items-center mb-5">
                     <div>
-                        <h1 className="display-5 fw-bold text-warning">Restoran Menü Paneli</h1>
-                        <p className="text-muted mb-0">Ürünlerinizi buradan yönetebilir, fiyat güncelleyebilirsiniz.</p>
+                        <h1 style={{ color: '#FFD700', fontWeight: 'bold', fontSize: '3rem', margin: 0 }}>Restoran Menü Paneli</h1>
+                        <p className="text-muted mt-2">Ürün stoklarını ve fiyatlarını buradan anlık yönetebilirsiniz.</p>
                     </div>
-                    <button className="btn btn-warning btn-lg fw-bold shadow" onClick={() => setModalAcik(true)}>
+                    <button className="btn btn-warning fw-bold px-4 py-2 shadow" onClick={() => setModalAcik(true)}>
                         + Yeni Ürün Ekle
                     </button>
                 </div>
 
-                {/* TABLO */}
-                <div className="table-responsive">
-                    <table className="table table-dark table-hover align-middle">
-                        <thead className="table-light">
-                            <tr>
+                <hr style={{ borderColor: 'rgba(255,215,0,0.2)', marginBottom: '40px' }} />
+
+                {/* TABLO ALANI */}
+                <div className="table-responsive rounded-4 overflow-hidden">
+                    <table className="table table-dark table-hover mb-0 align-middle">
+                        <thead className="table-light text-dark">
+                            <tr style={{ height: '60px' }}>
                                 <th className="ps-4">Ürün Adı</th>
                                 <th>Kategori</th>
                                 <th>Fiyat</th>
+                                <th>Stok Durumu</th>
                                 <th className="text-center">İşlemler</th>
                             </tr>
                         </thead>
                         <tbody>
                             {urunler.map((u) => (
-                                <tr key={u.id}>
-                                    <td className="ps-4 fw-semibold text-warning">{u.ad}</td>
-                                    <td><span className="badge bg-secondary p-2">{u.kategori}</span></td>
-                                    <td className="fw-bold">{u.fiyat} ₺</td>
+                                <tr key={u.id} style={{ height: '70px', borderBottom: '1px solid #222' }}>
+                                    <td className="ps-4 fw-bold" style={{ color: '#FFD700', fontSize: '1.1rem' }}>{u.ad}</td>
+                                    <td><span className="badge bg-secondary px-3 py-2">{u.kategori}</span></td>
+                                    <td className="fw-bold text-white">{u.fiyat} ₺</td>
+                                    <td>
+                                        {u.stok === 0 ? (
+                                            <span className="text-danger fw-bold">● Tükendi</span>
+                                        ) : u.stok < 10 ? (
+                                            <span className="text-warning fw-bold">● Kritik ({u.stok})</span>
+                                        ) : (
+                                            <span className="text-success fw-bold">● Yeterli ({u.stok})</span>
+                                        )}
+                                    </td>
                                     <td className="text-center">
-                                        <button className="btn btn-outline-info btn-sm me-2">Düzenle</button>
-                                        <button className="btn btn-outline-danger btn-sm" onClick={() => urunSil(u.id)}>Sil</button>
+                                        <button className="btn btn-sm btn-outline-info me-2 px-3">Düzenle</button>
+                                        <button className="btn btn-sm btn-outline-danger px-3" onClick={() => handleUrunSil(u.id)}>Sil</button>
                                     </td>
                                 </tr>
                             ))}
@@ -71,49 +81,59 @@ const MenuYonetimi = () => {
                 </div>
             </div>
 
-            {/* MODERN MODAL */}
+            {/* EKLEME MODALI */}
             {modalAcik && (
-                <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}>
-                    <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content bg-dark text-white border-warning border-2">
-                            <div className="modal-header border-secondary">
-                                <h5 className="modal-title text-warning">Yeni Ürün Ekle</h5>
-                                <button type="button" className="btn-close btn-close-white" onClick={() => setModalAcik(false)}></button>
+                <div style={styles.modalOverlay}>
+                    <div className="card bg-dark text-white border-warning p-4 shadow-lg" style={{ width: '450px', borderRadius: '20px' }}>
+                        <h3 className="text-warning mb-4 fw-bold text-center">Yeni Ürün Ekle</h3>
+                        <form onSubmit={handleUrunEkle}>
+                            <div className="mb-3">
+                                <label className="small text-muted mb-1">Ürün Adı</label>
+                                <input type="text" className="form-control bg-dark text-white border-secondary" required 
+                                    onChange={e => setYeniUrun({...yeniUrun, ad: e.target.value})} />
                             </div>
-                            <form onSubmit={urunEkle}>
-                                <div className="modal-body p-4">
-                                    <div className="mb-3">
-                                        <label className="form-label">Ürün İsmi</label>
-                                        <input type="text" className="form-control bg-dark text-white border-secondary" required 
-                                            onChange={(e) => setYeniUrun({...yeniUrun, ad: e.target.value})} />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label">Kategori</label>
-                                        <select className="form-select bg-dark text-white border-secondary" 
-                                            onChange={(e) => setYeniUrun({...yeniUrun, kategori: e.target.value})}>
-                                            <option value="Ana Yemek">Ana Yemek</option>
-                                            <option value="Çorba">Çorba</option>
-                                            <option value="Tatlı">Tatlı</option>
-                                            <option value="İçecek">İçecek</option>
-                                        </select>
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label">Fiyat (₺)</label>
-                                        <input type="number" className="form-control bg-dark text-white border-secondary" required
-                                            onChange={(e) => setYeniUrun({...yeniUrun, fiyat: e.target.value})} />
-                                    </div>
+                            <div className="mb-3">
+                                <label className="small text-muted mb-1">Kategori</label>
+                                <select className="form-select bg-dark text-white border-secondary" onChange={e => setYeniUrun({...yeniUrun, kategori: e.target.value})}>
+                                    <option value="Ana Yemek">Ana Yemek</option>
+                                    <option value="Çorba">Çorba</option>
+                                    <option value="İçecek">İçecek</option>
+                                    <option value="Tatlı">Tatlı</option>
+                                </select>
+                            </div>
+                            <div className="row g-2 mb-4">
+                                <div className="col-md-6">
+                                    <label className="small text-muted mb-1">Fiyat (₺)</label>
+                                    <input type="number" className="form-control bg-dark text-white border-secondary" required 
+                                        onChange={e => setYeniUrun({...yeniUrun, fiyat: e.target.value})} />
                                 </div>
-                                <div className="modal-footer border-secondary">
-                                    <button type="button" className="btn btn-outline-secondary" onClick={() => setModalAcik(false)}>İptal</button>
-                                    <button type="submit" className="btn btn-warning px-4 fw-bold">Kaydet</button>
+                                <div className="col-md-6">
+                                    <label className="small text-muted mb-1">Stok Adedi</label>
+                                    <input type="number" className="form-control bg-dark text-white border-secondary" required 
+                                        onChange={e => setYeniUrun({...yeniUrun, stok: parseInt(e.target.value)})} />
                                 </div>
-                            </form>
-                        </div>
+                            </div>
+                            <div className="d-flex gap-2">
+                                <button type="submit" className="btn btn-warning w-100 fw-bold py-2 shadow">Sisteme Kaydet</button>
+                                <button type="button" className="btn btn-outline-secondary w-100 text-white" onClick={() => setModalAcik(false)}>İptal</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
         </div>
     );
+};
+
+const styles = {
+    pageWrapper: { backgroundColor: '#111', minHeight: '100vh', padding: '40px' },
+    containerCard: { backgroundColor: '#1a1a1a', border: '1px solid #333' },
+    modalOverlay: { 
+        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
+        backgroundColor: 'rgba(0,0,0,0.92)', display: 'flex', 
+        justifyContent: 'center', alignItems: 'center', zIndex: 1050,
+        backdropFilter: 'blur(5px)'
+    }
 };
 
 export default MenuYonetimi;
