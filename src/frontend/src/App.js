@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import KullaniciYonetimi from './pages/KullaniciYonetimi';
 import MenuYonetimi from './pages/MenuYonetimi';
 import MasaPlani from './pages/MasaPlani'; // Yeni eklediğimiz sayfa
+import StokTakip from './pages/StokTakip'; // Sayfayı içeri alıyoruz
 
 function App() {
   return (
