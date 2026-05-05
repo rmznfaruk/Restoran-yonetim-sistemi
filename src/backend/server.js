@@ -4,27 +4,22 @@ const cors = require('cors');
 
 const app = express();
 
-const tablesRouter = require('./routes/tables');
-app.use('/api/tables', tablesRouter); //Yusuf ekledi
-
 // Temel Middleware'ler
 app.use(cors());
 app.use(express.json());
 
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
+// Rotaları içe aktar ve kullan
+const authRoutes = require('./routes/auth'); // Ramazan'ın eklediği
+app.use('/api/auth', authRoutes); 
 
-// Rotaları içe aktar
-const authRoutes = require('./routes/auth'); // YENİ EKLENEN SATIR
+const tablesRouter = require('./routes/tables'); // Yusuf'un eklediği
+app.use('/api/tables', tablesRouter);
 
-const app = express();
+const ordersRouter = require('./routes/orders'); // Yusuf'un eklediği
+app.use('/api/orders', ordersRouter);
 
-app.use(cors());
-app.use(express.json());
-
-// Rotaları kullan
-app.use('/api/auth', authRoutes); // YENİ EKLENEN SATIR
+const productsRouter = require('./routes/products'); // Yusuf'un eklediği
+app.use('/api/products', productsRouter);
 
 const PORT = process.env.PORT || 3001;
 
@@ -33,13 +28,3 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
-
-const PORT = process.env.PORT || 3001;
-
-app.listen(PORT, () => {
-    console.log(`RYS Backend sunucusu ${PORT} portunda çalışıyor...`);
-});
-
-module.exports = app;
-
-app.use('/api/orders', require('./routes/orders')); //Yusuf ekledi

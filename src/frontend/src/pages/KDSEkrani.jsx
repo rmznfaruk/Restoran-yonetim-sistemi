@@ -1,27 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+
+const fallbackSiparisler = [
+  {
+    id: 501,
+    masa_no: 12,
+    durum: "hazirlaniyor",
+    olusturma_zamani: new Date(Date.now() - 7 * 60000).toISOString(),
+    kalemler: [
+      { urun_adi: "Adana Kebap", miktar: 2 },
+      { urun_adi: "Ayran", miktar: 2 },
+    ],
+  },
+  {
+    id: 502,
+    masa_no: 4,
+    durum: "hazir",
+    olusturma_zamani: new Date(Date.now() - 12 * 60000).toISOString(),
+    kalemler: [{ urun_adi: "Mercimek Çorbası", miktar: 3 }],
+  },
+];
 
 const KDSEkrani = () => {
-  const [siparisler, setSiparisler] = useState([]);
+  const [siparisler, setSiparisler] = useState(fallbackSiparisler);
   const [suankiZaman, setSuankiZaman] = useState(Date.now());
 
-  // API'den verileri çeken fonksiyon
   const siparisleriGetir = async () => {
     try {
-      const response = await axios.get('/api/orders');
-      const aktifSiparisler = response.data.filter(
-        (siparis) => siparis.durum !== 'kapali' && siparis.durum !== 'iptal'
-      );
+      const response = await axios.get("/api/orders");
+      const aktifSiparisler = response.data.filter((siparis) => siparis.durum !== "kapali" && siparis.durum !== "iptal");
       setSiparisler(aktifSiparisler);
     } catch (error) {
-      console.error('Siparişler çekilirken hata oluştu:', error);
+      console.error("Siparişler çekilirken hata oluştu:", error);
     }
   };
 
   useEffect(() => {
-    siparisleriGetir(); // İlk yüklemede çalıştır
-    
-    // Her 5 saniyede bir siparişleri ve mevcut zamanı güncelle
+    siparisleriGetir();
+
     const interval = setInterval(() => {
       siparisleriGetir();
       setSuankiZaman(Date.now());
@@ -30,66 +46,69 @@ const KDSEkrani = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Siparişi hazır olarak işaretleyen fonksiyon
   const hazirIsaretle = async (id) => {
     try {
-      await axios.patch(`/api/orders/${id}`, { durum: 'hazir' });
-      siparisleriGetir(); // Butona basılınca anında listeyi yenile
+      await axios.patch(`/api/orders/${id}`, { durum: "hazir" });
+      siparisleriGetir();
     } catch (error) {
-      console.error('Sipariş güncellenirken hata:', error);
+      console.error("Sipariş güncellenirken hata:", error);
     }
   };
 
-  // Bekleme süresini hesaplayan fonksiyon
   const sureHesapla = (siparisZamani) => {
     const fark = suankiZaman - new Date(siparisZamani).getTime();
-    return Math.floor(fark / 60000); // Milisaniyeyi dakikaya çevir
+    return Math.floor(fark / 60000);
   };
 
-  // Bekleme süresine göre kenarlık rengi belirleyen fonksiyon
   const renkBelirle = (dakika, durum) => {
-    if (durum === 'hazir') return 'green';
-    if (dakika > 10) return 'red';
-    if (dakika >= 5) return 'orange';
-    return 'black';
+    if (durum === "hazir") return "#2f7d5c";
+    if (dakika > 10) return "#b84d4d";
+    if (dakika >= 5) return "#d7b66f";
+    return "#6f7b52";
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Mutfak Ekranı (KDS)</h1>
-      <p>Aktif Sipariş Sayısı: {siparisler.length}</p>
-      
-      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+    <div className="page-stack">
+      <section className="page-header">
+        <div>
+          <p className="eyebrow">Mutfak operasyonu</p>
+          <h1>KDS Ekranı</h1>
+          <p>Hazırlık süresi uzayan siparişleri hızlıca görün ve akışı mutfaktan yönetin.</p>
+        </div>
+        <div className="surface-card">
+          <p className="eyebrow">Aktif sipariş</p>
+          <div className="metric-value">{siparisler.length}</div>
+        </div>
+      </section>
+
+      <section className="ticket-grid">
         {siparisler.map((siparis) => {
           const beklemeDakikasi = sureHesapla(siparis.olusturma_zamani || Date.now());
           const kenarlikRengi = renkBelirle(beklemeDakikasi, siparis.durum);
 
           return (
-            <div key={siparis.id} style={{ border: `3px solid ${kenarlikRengi}`, padding: '15px', borderRadius: '8px', minWidth: '250px' }}>
-              <h3>Masa: {siparis.masa_no} | Sipariş: #{siparis.id}</h3>
-              <p>Geçen Süre: {beklemeDakikasi} dk</p>
-              
-              <ul>
-                {siparis.kalemler && siparis.kalemler.map((kalem, index) => (
-                  <li key={index}>{kalem.urun_adi} - {kalem.miktar} adet</li>
+            <article key={siparis.id} className="ticket-card" style={{ borderTopColor: kenarlikRengi }}>
+              <p className="eyebrow">Masa {siparis.masa_no}</p>
+              <h3>Sipariş #{siparis.id}</h3>
+              <p className="helper-text">Bekleme süresi: {beklemeDakikasi} dk</p>
+
+              <ul className="ticket-list">
+                {siparis.kalemler?.map((kalem, index) => (
+                  <li key={`${kalem.urun_adi}-${index}`}>
+                    {kalem.urun_adi} x {kalem.miktar}
+                  </li>
                 ))}
               </ul>
 
-              {/* Sipariş hazırsa yeşil yazı göster, değilse butonu göster */}
-              {siparis.durum === 'hazir' ? (
-                <h2 style={{ color: 'green', textAlign: 'center' }}>✓ HAZIR</h2>
+              {siparis.durum === "hazir" ? (
+                <span className="pill pill--success">Hazır</span>
               ) : (
-                <button 
-                  onClick={() => hazirIsaretle(siparis.id)} 
-                  style={{ width: '100%', padding: '10px', backgroundColor: '#e0e0e0', cursor: 'pointer', border: 'none', borderRadius: '5px', fontWeight: 'bold' }}
-                >
-                  Hazır
-                </button>
+                <button className="action-button" onClick={() => hazirIsaretle(siparis.id)}>Hazır olarak işaretle</button>
               )}
-            </div>
+            </article>
           );
         })}
-      </div>
+      </section>
     </div>
   );
 };
