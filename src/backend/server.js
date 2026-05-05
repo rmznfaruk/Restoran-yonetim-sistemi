@@ -8,23 +8,26 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Rotaları içe aktar ve kullan
-const authRoutes = require('./routes/auth'); // Ramazan'ın eklediği
-app.use('/api/auth', authRoutes); 
+// Rotalari ice aktar ve kullan
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
 
-const tablesRouter = require('./routes/tables'); // Yusuf'un eklediği
+const tablesRouter = require('./routes/tables');
 app.use('/api/tables', tablesRouter);
 
-const ordersRouter = require('./routes/orders'); // Yusuf'un eklediği
+const ordersRouter = require('./routes/orders');
 app.use('/api/orders', ordersRouter);
 
-const productsRouter = require('./routes/products'); // Yusuf'un eklediği
+const productsRouter = require('./routes/products');
 app.use('/api/products', productsRouter);
+
+const paymentsRouter = require('./routes/payments');
+app.use('/api/payments', paymentsRouter);
 
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
-    console.log(`RYS Backend sunucusu ${PORT} portunda çalışıyor...`);
+    console.log(`RYS Backend sunucusu ${PORT} portunda calisiyor...`);
 });
 
 module.exports = app;
