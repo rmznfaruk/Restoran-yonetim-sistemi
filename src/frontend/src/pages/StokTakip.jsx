@@ -1,43 +1,60 @@
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect, useMemo } from 'react';
+import axios from 'axios';
 
-const baslangicUrunleri = [
-  { id: 1, ad: "Kiyma", stok: 5, kritikSeviye: 10, kategori: "Et" },
-  { id: 2, ad: "Domates", stok: 12, kritikSeviye: 10, kategori: "Sebze" },
-  { id: 3, ad: "Ekmek", stok: 50, kritikSeviye: 20, kategori: "Firindan" },
-  { id: 4, ad: "Ayran", stok: 0, kritikSeviye: 5, kategori: "Icecek" },
-];
-
+// Stok durumuna göre etiket ve renk belirleyen yardımcı fonksiyon
 const stokDurumu = (urun) => {
   if (urun.stok <= urun.kritikSeviye) {
     return { label: "Kritik seviye", className: "pill pill--danger" };
   }
-
   if (urun.stok <= Math.ceil(urun.kritikSeviye * 1.5)) {
     return { label: "Azaliyor", className: "pill pill--warning" };
   }
-
   return { label: "Guvenli", className: "pill pill--success" };
 };
 
 const StokTakip = () => {
-  const [urunler, setUrunler] = useState(baslangicUrunleri);
+  const [urunler, setUrunler] = useState([]); 
   const [sadeceKritik, setSadeceKritik] = useState(false);
+  const token = localStorage.getItem('token'); 
 
-  const filtreliUrunler = useMemo(() => {
-    if (!sadeceKritik) {
-      return urunler;
+  // --- Veri Çekme İşlemi (Yusuf'un Backend Bağlantısı) ---
+  useEffect(() => {
+    const stokVerileriniGetir = async () => {
+      try {
+        const response = await axios.get('http://localhost:3001/api/products?stok=true', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUrunler(response.data);
+      } catch (err) {
+        console.error("Veritabanı bağlantı hatası:", err);
+      }
+    };
+    if (token) stokVerileriniGetir();
+  }, [token]);
+
+  // --- Stok Güncelleme İşlemi (PATCH İsteği) ---
+  const handleStokGuncelle = async (id, yeniMiktar) => {
+    try {
+      await axios.patch(`http://localhost:3001/api/products/${id}/stok`, 
+        { stok_miktar: Number(yeniMiktar) }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setUrunler((mevcut) =>
+        mevcut.map((urun) =>
+          urun.id === id ? { ...urun, stok: Math.max(0, Number(yeniMiktar) || 0) } : urun
+        )
+      );
+    } catch (err) {
+      alert("Hata: Stok veritabanında güncellenemedi!");
     }
+  };
 
+  // --- ÖNEMLİ: Filtreleme Mantığı (Bu kısım eksikti) ---
+  const filtreliUrunler = useMemo(() => {
+    if (!sadeceKritik) return urunler;
     return urunler.filter((urun) => urun.stok <= urun.kritikSeviye);
   }, [sadeceKritik, urunler]);
-
-  const handleStokGuncelle = (id, yeniMiktar) => {
-    setUrunler((mevcut) =>
-      mevcut.map((urun) =>
-        urun.id === id ? { ...urun, stok: Math.max(0, Number(yeniMiktar) || 0) } : urun
-      )
-    );
-  };
 
   return (
     <div className="page-stack">
@@ -91,7 +108,6 @@ const StokTakip = () => {
             <tbody>
               {filtreliUrunler.map((urun) => {
                 const durum = stokDurumu(urun);
-
                 return (
                   <tr key={urun.id}>
                     <td>{urun.ad}</td>
