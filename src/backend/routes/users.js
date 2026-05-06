@@ -2,32 +2,14 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const pool = require("../db/pool");
 const authMiddleware = require("../middleware/authMiddleware");
+const {
+  createFallbackUser,
+  findFallbackUserByUsername,
+  listFallbackUsers,
+  updateFallbackUser,
+} = require("../services/userStore");
 
 const router = express.Router();
-
-let fallbackUsers = [
-  {
-    id: 1,
-    ad_soyad: "Ayse Kaya",
-    kullanici_adi: "ayse",
-    rol: "garson",
-    aktif_mi: true,
-  },
-  {
-    id: 2,
-    ad_soyad: "Can Yildiz",
-    kullanici_adi: "can",
-    rol: "kasiyer",
-    aktif_mi: true,
-  },
-  {
-    id: 3,
-    ad_soyad: "Mert Sahin",
-    kullanici_adi: "mert",
-    rol: "mutfak",
-    aktif_mi: false,
-  },
-];
 
 const yoneticiKontrolu = (req, res) => {
   if (req.kullanici?.rol !== "yonetici") {
@@ -37,6 +19,59 @@ const yoneticiKontrolu = (req, res) => {
 
   return true;
 };
+
+router.post("/register", async (req, res) => {
+  try {
+    const { ad_soyad, kullanici_adi, sifre, rol } = req.body;
+    const izinliRol = ["garson", "kasiyer", "mutfak"].includes(rol) ? rol : "garson";
+
+    if (!ad_soyad || !kullanici_adi || !sifre) {
+      return res.status(400).json({ mesaj: "Ad soyad, kullanici adi ve sifre zorunludur." });
+    }
+
+    if (findFallbackUserByUsername(kullanici_adi)) {
+      return res.status(409).json({ mesaj: "Bu kullanici adi zaten kullanimda." });
+    }
+
+    try {
+      const mevcutKullanici = await pool.query(
+        "SELECT id FROM personel WHERE kullanici_adi = $1",
+        [kullanici_adi]
+      );
+
+      if (mevcutKullanici.rows.length > 0) {
+        return res.status(409).json({ mesaj: "Bu kullanici adi zaten kullanimda." });
+      }
+
+      const sifre_hash = await bcrypt.hash(sifre, 10);
+      const result = await pool.query(
+        "INSERT INTO personel (ad_soyad, kullanici_adi, sifre_hash, rol, aktif_mi) VALUES ($1, $2, $3, $4, $5) RETURNING id, ad_soyad, kullanici_adi, rol, aktif_mi",
+        [ad_soyad, kullanici_adi, sifre_hash, izinliRol, true]
+      );
+
+      return res.status(201).json({
+        mesaj: "Kullanici hesabi olusturuldu. Giris yapabilirsiniz.",
+        kullanici: result.rows[0],
+      });
+    } catch (dbError) {
+      const yeniKullanici = await createFallbackUser({
+        ad_soyad,
+        kullanici_adi,
+        sifre,
+        rol: izinliRol,
+        aktif_mi: true,
+      });
+
+      console.warn("Public register fallback kullandi:", dbError.message);
+      return res.status(201).json({
+        mesaj: "Kullanici hesabi olusturuldu. Giris yapabilirsiniz.",
+        kullanici: yeniKullanici,
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({ mesaj: "Kullanici olusturulurken hata olustu." });
+  }
+});
 
 router.use(authMiddleware);
 
@@ -52,7 +87,7 @@ router.get("/", async (req, res) => {
     return res.json(result.rows);
   } catch (error) {
     console.warn("Users API ornek veri ile yanit veriyor:", error.message);
-    return res.json(fallbackUsers);
+    return res.json(listFallbackUsers());
   }
 });
 
@@ -78,14 +113,13 @@ router.post("/", async (req, res) => {
 
       return res.status(201).json(result.rows[0]);
     } catch (dbError) {
-      const yeniKullanici = {
-        id: Date.now(),
+      const yeniKullanici = await createFallbackUser({
         ad_soyad,
         kullanici_adi,
+        sifre,
         rol,
         aktif_mi: true,
-      };
-      fallbackUsers = [...fallbackUsers, yeniKullanici];
+      });
       console.warn("Users API fallback ekleme kullandi:", dbError.message);
       return res.status(201).json(yeniKullanici);
     }
@@ -115,18 +149,7 @@ router.patch("/:id", async (req, res) => {
 
       return res.json(result.rows[0]);
     } catch (dbError) {
-      fallbackUsers = fallbackUsers.map((user) =>
-        String(user.id) === String(id)
-          ? {
-              ...user,
-              ad_soyad: ad_soyad ?? user.ad_soyad,
-              rol: rol ?? user.rol,
-              aktif_mi: typeof aktif_mi === "boolean" ? aktif_mi : user.aktif_mi,
-            }
-          : user
-      );
-
-      const guncelKullanici = fallbackUsers.find((user) => String(user.id) === String(id));
+      const guncelKullanici = updateFallbackUser(id, { ad_soyad, rol, aktif_mi });
 
       if (!guncelKullanici) {
         return res.status(404).json({ mesaj: "Kullanici bulunamadi." });

@@ -50,7 +50,7 @@ const LoginPage = ({ onLogin, isAuthenticated }) => {
       const hedefYol = roleLandingPaths[response.data?.kullanici?.rol] || "/yonetim";
       onLogin?.(response.data);
 
-      if (response.data?.mesaj?.toLowerCase().includes("demo")) {
+      if (response.data?.mesaj?.toLowerCase?.().includes("demo")) {
         setYardimMesaji("Veritabani hazir olana kadar demo yonetici hesabi kullaniliyor.");
       }
 
@@ -66,7 +66,9 @@ const LoginPage = ({ onLogin, isAuthenticated }) => {
   };
 
   const handleKayitOl = () => {
-    setYardimMesaji("Yeni kullanici akisi kullanici yonetimi modulu ile ilerleyecek.");
+    setHataMesaji("");
+    setYardimMesaji("");
+    navigate("/kayit");
   };
 
   return (

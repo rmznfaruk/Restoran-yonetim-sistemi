@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const pool = require("../db/pool");
+const { findFallbackUserByUsername } = require("../services/userStore");
 
 const jwtSecret = process.env.JWT_SECRET || "rys_gizli_anahtar";
 const jwtExpiresIn = process.env.JWT_EXPIRES_IN || "8h";
@@ -49,7 +50,7 @@ async function findUser(kullaniciAdi) {
     return demoUser;
   }
 
-  return null;
+  return findFallbackUserByUsername(kullaniciAdi);
 }
 
 exports.login = async (req, res) => {

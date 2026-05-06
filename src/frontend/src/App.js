@@ -5,6 +5,7 @@ import "./App.css";
 import Navbar from "./components/Navbar";
 import KorunanRota from "./components/KorunanRota";
 import KDSEkrani from "./pages/KDSEkrani";
+import KayitPage from "./pages/KayitPage";
 import KullaniciYonetimi from "./pages/KullaniciYonetimi";
 import LoginPage from "./pages/LoginPage";
 import MasaPlani from "./pages/MasaPlani";
@@ -77,6 +78,20 @@ function App() {
               <div className="app-shell">
                 <main className="content-shell">
                   <LoginPage onLogin={handleLogin} isAuthenticated={isAuthenticated} />
+                </main>
+              </div>
+            )
+          }
+        />
+        <Route
+          path="/kayit"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/yonetim" replace />
+            ) : (
+              <div className="app-shell">
+                <main className="content-shell">
+                  <KayitPage />
                 </main>
               </div>
             )
@@ -181,6 +196,7 @@ function App() {
             </UygulamaKabugu>
           }
         />
+        <Route path="*" element={<Navigate to={isAuthenticated ? "/yonetim" : "/"} replace />} />
       </Routes>
     </BrowserRouter>
   );
