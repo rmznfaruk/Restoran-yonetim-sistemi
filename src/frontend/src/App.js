@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import "./App.css";
 
 import Navbar from "./components/Navbar";
@@ -41,14 +41,15 @@ const YetkisizEkran = () => (
   </div>
 );
 
-const UygulamaKabugu = ({ children }) => (
+const UygulamaKabugu = ({ children, onLogout }) => (
   <div className="app-shell">
-    <Navbar navigationItems={navigationItems} />
+    <Navbar navigationItems={navigationItems} onLogout={onLogout} />
     <main className="content-shell">{children}</main>
   </div>
 );
 
-function App() {
+function AppRoutes() {
+  const navigate = useNavigate();
   const [authState, setAuthState] = useState(() => {
     const token = localStorage.getItem("token");
     const rawUser = localStorage.getItem("rysUser");
@@ -67,9 +68,15 @@ function App() {
     setAuthState({ token: payload.token, user: payload.kullanici });
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("rysUser");
+    setAuthState({ token: null, user: null });
+    navigate("/", { replace: true });
+  };
+
   return (
-    <BrowserRouter>
-      <Routes>
+    <Routes>
         <Route
           path="/"
           element={
@@ -103,7 +110,7 @@ function App() {
           path="/yonetim"
           element={
             <KorunanRota izinliRoller={["yonetici"]}>
-              <UygulamaKabugu>
+              <UygulamaKabugu onLogout={handleLogout}>
                 <YonetimPaneli />
               </UygulamaKabugu>
             </KorunanRota>
@@ -113,7 +120,7 @@ function App() {
           path="/kullanici"
           element={
             <KorunanRota izinliRoller={["yonetici"]}>
-              <UygulamaKabugu>
+              <UygulamaKabugu onLogout={handleLogout}>
                 <KullaniciYonetimi />
               </UygulamaKabugu>
             </KorunanRota>
@@ -123,7 +130,7 @@ function App() {
           path="/menu"
           element={
             <KorunanRota izinliRoller={["yonetici"]}>
-              <UygulamaKabugu>
+              <UygulamaKabugu onLogout={handleLogout}>
                 <MenuYonetimi />
               </UygulamaKabugu>
             </KorunanRota>
@@ -133,7 +140,7 @@ function App() {
           path="/stok"
           element={
             <KorunanRota izinliRoller={["yonetici"]}>
-              <UygulamaKabugu>
+              <UygulamaKabugu onLogout={handleLogout}>
                 <StokTakip />
               </UygulamaKabugu>
             </KorunanRota>
@@ -143,7 +150,7 @@ function App() {
           path="/masalar"
           element={
             <KorunanRota izinliRoller={["garson", "yonetici"]}>
-              <UygulamaKabugu>
+              <UygulamaKabugu onLogout={handleLogout}>
                 <MasaPlani />
               </UygulamaKabugu>
             </KorunanRota>
@@ -153,7 +160,7 @@ function App() {
           path="/siparis"
           element={
             <KorunanRota izinliRoller={["garson", "yonetici"]}>
-              <UygulamaKabugu>
+              <UygulamaKabugu onLogout={handleLogout}>
                 <SiparisGirisi />
               </UygulamaKabugu>
             </KorunanRota>
@@ -163,7 +170,7 @@ function App() {
           path="/rezervasyon"
           element={
             <KorunanRota izinliRoller={["garson", "yonetici"]}>
-              <UygulamaKabugu>
+              <UygulamaKabugu onLogout={handleLogout}>
                 <RezervasyonEkrani />
               </UygulamaKabugu>
             </KorunanRota>
@@ -173,7 +180,7 @@ function App() {
           path="/kds"
           element={
             <KorunanRota izinliRoller={["mutfak", "yonetici"]}>
-              <UygulamaKabugu>
+              <UygulamaKabugu onLogout={handleLogout}>
                 <KDSEkrani />
               </UygulamaKabugu>
             </KorunanRota>
@@ -183,7 +190,7 @@ function App() {
           path="/rapor"
           element={
             <KorunanRota izinliRoller={["yonetici"]}>
-              <UygulamaKabugu>
+              <UygulamaKabugu onLogout={handleLogout}>
                 <RaporEkrani />
               </UygulamaKabugu>
             </KorunanRota>
@@ -202,13 +209,20 @@ function App() {
         <Route
           path="/yetkisiz"
           element={
-            <UygulamaKabugu>
+            <UygulamaKabugu onLogout={handleLogout}>
               <YetkisizEkran />
             </UygulamaKabugu>
           }
         />
         <Route path="*" element={<Navigate to={isAuthenticated ? "/yonetim" : "/"} replace />} />
       </Routes>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   );
 }
