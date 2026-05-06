@@ -104,10 +104,13 @@ select {
   font-size: 1.15rem;
 }
 
-.topbar-meta {
-  margin: 6px 0 0;
-  color: rgba(255, 249, 240, 0.62);
-  font-size: 0.86rem;
+.topbar-user {
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: rgba(255, 249, 240, 0.82);
+  font-size: 0.9rem;
 }
 
 .topnav {
@@ -475,6 +478,11 @@ select {
   color: var(--olive);
 }
 
+.pill--accent {
+  background: rgba(76, 101, 176, 0.14);
+  color: #3454a2;
+}
+
 .card-grid-compact {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -685,7 +693,6 @@ select {
 .metric-card--neutral::before {
   background: #7a6f64;
 }
-
 .dashboard-layout {
   display: grid;
   grid-template-columns: 1.55fr 0.95fr;
@@ -724,7 +731,7 @@ select {
 }
 
 .activity-item p,
-.status-row span {
+.status-row p {
   margin: 6px 0 0;
   color: var(--muted);
 }

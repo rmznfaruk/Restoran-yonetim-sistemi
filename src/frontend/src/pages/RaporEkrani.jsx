@@ -7,36 +7,39 @@ const fallbackRapor = {
   ortalamaTutar: "435 TL",
   enCokSatanlar: [
     { ad: "Adana Kebap", adet: 74 },
-    { ad: "Mercimek Çorbası", adet: 58 },
+    { ad: "Mercimek Corbasi", adet: 58 },
     { ad: "Ayran", adet: 112 },
   ],
   personel: [
-    { ad: "Ayşe Kaya", siparis: 81 },
-    { ad: "Can Yıldız", siparis: 67 },
-    { ad: "Mert Şahin", siparis: 59 },
+    { ad: "Ayse Kaya", siparis: 81 },
+    { ad: "Can Yildiz", siparis: 67 },
+    { ad: "Mert Sahin", siparis: 59 },
   ],
 };
 
 const periyotEtiketleri = {
-  gunluk: "Günlük",
-  haftalik: "Haftalık",
-  aylik: "Aylık",
+  gunluk: "Gunluk",
+  haftalik: "Haftalik",
+  aylik: "Aylik",
 };
 
 const RaporEkrani = () => {
   const [periyot, setPeriyot] = useState("gunluk");
   const [rapor, setRapor] = useState(fallbackRapor);
+  const [canliVeri, setCanliVeri] = useState(false);
 
   useEffect(() => {
     const veriGetir = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`/api/reports?periyot=${periyot}`, {
+        const response = await axios.get(`/api/reports?periyot=${periyot}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setRapor(res.data);
-      } catch (err) {
-        console.log("Rapor verisi alınamadı, örnek görünüm gösteriliyor:", err);
+        setRapor(response.data);
+        setCanliVeri(true);
+      } catch (error) {
+        console.warn("Rapor verisi alinamadi, ornek gorunum gosteriliyor:", error.message);
+        setCanliVeri(false);
       }
     };
 
@@ -46,7 +49,7 @@ const RaporEkrani = () => {
   const kpiVerileri = useMemo(
     () => [
       { title: "Toplam Ciro", value: rapor?.toplamCiro ?? "-" },
-      { title: "Sipariş Sayısı", value: rapor?.siparisSayisi ?? "-" },
+      { title: "Siparis Sayisi", value: rapor?.siparisSayisi ?? "-" },
       { title: "Ortalama Tutar", value: rapor?.ortalamaTutar ?? "-" },
     ],
     [rapor]
@@ -57,8 +60,8 @@ const RaporEkrani = () => {
       <section className="page-header">
         <div>
           <p className="eyebrow">Raporlama</p>
-          <h1>Performans Özeti</h1>
-          <p>Servis yoğunluğu, ürün hareketi ve personel performansını tek panelde inceleyin.</p>
+          <h1>Performans Ozeti</h1>
+          <p>Servis yogunlugu, urun hareketi ve personel performansini tek panelde inceleyin.</p>
         </div>
         <div className="toolbar">
           {Object.entries(periyotEtiketleri).map(([value, label]) => (
@@ -73,6 +76,10 @@ const RaporEkrani = () => {
         </div>
       </section>
 
+      <div className={canliVeri ? "info-banner" : "error-banner"}>
+        {canliVeri ? "Raporlar canli API verisi ile guncellendi." : "Rapor endpoint'i hazir olmadigi icin ornek veri gosteriliyor."}
+      </div>
+
       <section className="kpi-grid">
         {kpiVerileri.map((item) => (
           <article key={item.title} className="surface-card">
@@ -84,12 +91,12 @@ const RaporEkrani = () => {
 
       <section className="grid-layout">
         <article className="surface-card">
-          <h3 className="section-title">En çok satan ürünler</h3>
+          <h3 className="section-title">En cok satan urunler</h3>
           <div className="table-shell">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Ürün</th>
+                  <th>Urun</th>
                   <th>Adet</th>
                 </tr>
               </thead>
@@ -106,13 +113,13 @@ const RaporEkrani = () => {
         </article>
 
         <article className="surface-card">
-          <h3 className="section-title">Personel performansı</h3>
+          <h3 className="section-title">Personel performansi</h3>
           <div className="table-shell">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Personel</th>
-                  <th>Sipariş</th>
+                  <th>Siparis</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,8 +134,12 @@ const RaporEkrani = () => {
           </div>
 
           <div className="split-actions" style={{ marginTop: 16 }}>
-            <button className="ghost-button">PDF indir</button>
-            <button className="action-button">Excel indir</button>
+            <button className="ghost-button" type="button">
+              PDF Olarak Indir
+            </button>
+            <button className="action-button" type="button">
+              Excel Olarak Indir
+            </button>
           </div>
         </article>
       </section>

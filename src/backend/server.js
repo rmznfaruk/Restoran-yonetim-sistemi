@@ -25,6 +25,9 @@ app.use('/api/orders', ordersRouter);
 const productsRouter = require('./routes/products'); // Yusuf'un eklediği
 app.use('/api/products', productsRouter);
 
+const usersRouter = require('./routes/users');
+app.use('/api/users', usersRouter);
+
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {

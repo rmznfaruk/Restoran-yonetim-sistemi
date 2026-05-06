@@ -3,26 +3,10 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 
 const quickLinks = [
-  {
-    title: "Siparis Girisi",
-    text: "Masaya ozel siparis acip servis akisini hizlandirin.",
-    link: "/siparis",
-  },
-  {
-    title: "Masa Plani",
-    text: "Dolu, bos ve rezerveli masa dengesini anlik izleyin.",
-    link: "/masalar",
-  },
-  {
-    title: "Menu Yonetimi",
-    text: "Kritik stok ve urun hareketlerini tek panelden takip edin.",
-    link: "/menu",
-  },
-  {
-    title: "Raporlar",
-    text: "Gunluk performans ve ciro gorunumune hizli gecis yapin.",
-    link: "/rapor",
-  },
+  { title: "Siparis Girisi", text: "Masaya ozel siparis acip servis akisini hizlandirin.", link: "/siparis" },
+  { title: "Masa Plani", text: "Dolu, bos ve rezerveli masa dengesini anlik izleyin.", link: "/masalar" },
+  { title: "Menu Yonetimi", text: "Kritik stok ve urun hareketlerini tek panelden takip edin.", link: "/menu" },
+  { title: "Kullanicilar", text: "Roller, aktiflik durumu ve personel kayitlarini guncelleyin.", link: "/kullanici" },
 ];
 
 const fallbackTables = [
@@ -78,7 +62,9 @@ function isToday(dateString) {
   );
 }
 
-const YonetimPaneli = ({ currentUser }) => {
+const YonetimPaneli = () => {
+  const rawUser = localStorage.getItem("rysUser");
+  const user = rawUser ? JSON.parse(rawUser) : null;
   const [tables, setTables] = useState(fallbackTables);
   const [orders, setOrders] = useState(fallbackOrders);
   const [products, setProducts] = useState(fallbackProducts);
@@ -132,41 +118,15 @@ const YonetimPaneli = ({ currentUser }) => {
       (order) => order.durum === "bekliyor" || order.durum === "hazirlaniyor"
     ).length;
     const kritikStok = products.filter(
-      (product) =>
-        Number(product.stok_miktar ?? 0) <= Number(product.kritik_seviye ?? 0)
+      (product) => Number(product.stok_miktar ?? 0) <= Number(product.kritik_seviye ?? 0)
     ).length;
 
     return [
-      {
-        label: "Toplam siparis",
-        value: toplamSiparis,
-        detail: "Bugun acilan tum fisler",
-        tone: "accent",
-      },
-      {
-        label: "Aktif masalar",
-        value: aktifMasalar,
-        detail: "Serviste veya rezerveli masa",
-        tone: "olive",
-      },
-      {
-        label: "Gunluk ciro",
-        value: currency.format(gunlukCiro || 3470),
-        detail: "Bugun kapanan ve acik siparislerden",
-        tone: "gold",
-      },
-      {
-        label: "Kritik stok",
-        value: kritikStok,
-        detail: "Takip gerektiren urun sayisi",
-        tone: "danger",
-      },
-      {
-        label: "Mutfak sirasi",
-        value: bekleyenSiparis,
-        detail: "Hazirlanmayi bekleyen siparis",
-        tone: "neutral",
-      },
+      { label: "Toplam siparis", value: toplamSiparis, detail: "Bugun acilan tum fisler", tone: "accent" },
+      { label: "Aktif masalar", value: aktifMasalar, detail: "Serviste veya rezerveli masa", tone: "olive" },
+      { label: "Gunluk ciro", value: currency.format(gunlukCiro || 3470), detail: "Bugun kapanan ve acik siparislerden", tone: "gold" },
+      { label: "Kritik stok", value: kritikStok, detail: "Takip gerektiren urun sayisi", tone: "danger" },
+      { label: "Mutfak sirasi", value: bekleyenSiparis, detail: "Hazirlanmayi bekleyen siparis", tone: "neutral" },
     ];
   }, [orders, products, tables]);
 
@@ -187,12 +147,12 @@ const YonetimPaneli = ({ currentUser }) => {
           <p className="eyebrow">Yonetim paneli</p>
           <h1>Servis, salon ve mutfak kararlarini tek merkezden yonetin.</h1>
           <p className="hero-copy">
-            Hos geldin {currentUser?.kullaniciAdi || "yonetici"}. Bu ekran gunluk operasyonu hizli okuyup ekibi
+            Hos geldin {user?.kullaniciAdi || "yonetici"}. Bu ekran gunluk operasyonu hizli okuyup ekibi
             dogru modullere yonlendirebilmen icin tasarlandi.
           </p>
 
           <div className="dashboard-badges">
-            <span className="pill pill--neutral">{currentUser?.rol || "yonetici"} oturumu</span>
+            <span className="pill pill--neutral">{user?.rol || "yonetici"} oturumu</span>
             <span className={usingFallback ? "pill pill--warning" : "pill pill--success"}>
               {usingFallback ? "Ornek veri gorunumu" : "Canli API baglantisi"}
             </span>
@@ -253,40 +213,22 @@ const YonetimPaneli = ({ currentUser }) => {
         </article>
 
         <article className="surface-card dashboard-side-panel">
-          <p className="eyebrow">Salon ozeti</p>
-          <h3>Masa dagilimi</h3>
+          <p className="eyebrow">Kisa yol</p>
+          <h3>Modul gecisleri</h3>
           <div className="status-list">
-            <div className="status-row">
-              <span>Bos</span>
-              <strong>{tables.filter((table) => table.durum === "bos").length}</strong>
-            </div>
-            <div className="status-row">
-              <span>Dolu</span>
-              <strong>{tables.filter((table) => table.durum === "dolu").length}</strong>
-            </div>
-            <div className="status-row">
-              <span>Rezerveli</span>
-              <strong>{tables.filter((table) => table.durum === "rezerveli").length}</strong>
-            </div>
-            <div className="status-row">
-              <span>Temizleniyor</span>
-              <strong>{tables.filter((table) => table.durum === "temizleniyor").length}</strong>
-            </div>
+            {quickLinks.map((item) => (
+              <div key={item.title} className="status-row">
+                <div>
+                  <strong>{item.title}</strong>
+                  <p>{item.text}</p>
+                </div>
+                <Link className="inline-action" to={item.link}>
+                  Ac
+                </Link>
+              </div>
+            ))}
           </div>
         </article>
-      </section>
-
-      <section className="dashboard-grid">
-        {quickLinks.map((card) => (
-          <article key={card.title} className="surface-card feature-card">
-            <p className="eyebrow">{card.title}</p>
-            <h3>{card.title}</h3>
-            <p>{card.text}</p>
-            <Link className="inline-action" to={card.link}>
-              Ekrani ac
-            </Link>
-          </article>
-        ))}
       </section>
     </div>
   );

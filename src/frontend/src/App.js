@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from "react";
-import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router-dom";
+import React, { useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 
+import Navbar from "./components/Navbar";
+import KorunanRota from "./components/KorunanRota";
 import KDSEkrani from "./pages/KDSEkrani";
 import KullaniciYonetimi from "./pages/KullaniciYonetimi";
 import LoginPage from "./pages/LoginPage";
@@ -25,13 +27,24 @@ const navigationItems = [
   { to: "/rapor", label: "Raporlar" },
 ];
 
-function ProtectedRoute({ isAuthenticated, children }) {
-  if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
+const YetkisizEkran = () => (
+  <div className="page-stack">
+    <section className="page-header">
+      <div>
+        <p className="eyebrow">Erisim</p>
+        <h1>Bu alana erisim yetkiniz bulunmuyor.</h1>
+        <p>Farkli bir rol ile giris yapabilir veya yonetici ile iletisime gecebilirsiniz.</p>
+      </div>
+    </section>
+  </div>
+);
 
-  return children;
-}
+const UygulamaKabugu = ({ children }) => (
+  <div className="app-shell">
+    <Navbar navigationItems={navigationItems} />
+    <main className="content-shell">{children}</main>
+  </div>
+);
 
 function App() {
   const [authState, setAuthState] = useState(() => {
@@ -46,146 +59,129 @@ function App() {
 
   const isAuthenticated = Boolean(authState.token);
 
-  const topbarSubtitle = useMemo(() => {
-    if (!authState.user) {
-      return "Oturum acilmadi";
-    }
-
-    return `${authState.user.kullaniciAdi} • ${authState.user.rol}`;
-  }, [authState.user]);
-
   const handleLogin = (payload) => {
     localStorage.setItem("token", payload.token);
     localStorage.setItem("rysUser", JSON.stringify(payload.kullanici));
     setAuthState({ token: payload.token, user: payload.kullanici });
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("rysUser");
-    setAuthState({ token: null, user: null });
-  };
-
   return (
     <BrowserRouter>
-      <div className="app-shell">
-        <header className="topbar">
-          <div className="brand-block">
-            <div className="brand-mark">RYS</div>
-            <div>
-              <p className="brand-kicker">Restoran Yonetim Sistemi</p>
-              <h2 className="brand-title">Operasyon Merkezi</h2>
-              <p className="topbar-meta">{topbarSubtitle}</p>
-            </div>
-          </div>
-
-          <nav className="topnav">
-            {isAuthenticated ? (
-              <>
-                {navigationItems.map((item) => (
-                  <Link key={item.to} className="topnav-link" to={item.to}>
-                    {item.label}
-                  </Link>
-                ))}
-                <button className="ghost-button topbar-button" type="button" onClick={handleLogout}>
-                  Cikis yap
-                </button>
-              </>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/yonetim" replace />
             ) : (
-              <Link className="topnav-link" to="/">
-                Giris
-              </Link>
-            )}
-          </nav>
-        </header>
-
-        <main className="content-shell">
-          <Routes>
-            <Route
-              path="/"
-              element={
-                isAuthenticated ? (
-                  <Navigate to="/yonetim" replace />
-                ) : (
+              <div className="app-shell">
+                <main className="content-shell">
                   <LoginPage onLogin={handleLogin} isAuthenticated={isAuthenticated} />
-                )
-              }
-            />
-            <Route
-              path="/yonetim"
-              element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <YonetimPaneli currentUser={authState.user} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/kullanici"
-              element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <KullaniciYonetimi />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/menu"
-              element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <MenuYonetimi />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/stok"
-              element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <StokTakip />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/masalar"
-              element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <MasaPlani />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/siparis"
-              element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <SiparisGirisi />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/rezervasyon"
-              element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <RezervasyonEkrani />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/kds"
-              element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <KDSEkrani />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/rapor"
-              element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <RaporEkrani />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </main>
-      </div>
+                </main>
+              </div>
+            )
+          }
+        />
+
+        <Route
+          path="/yonetim"
+          element={
+            <KorunanRota izinliRoller={["yonetici"]}>
+              <UygulamaKabugu>
+                <YonetimPaneli />
+              </UygulamaKabugu>
+            </KorunanRota>
+          }
+        />
+        <Route
+          path="/kullanici"
+          element={
+            <KorunanRota izinliRoller={["yonetici"]}>
+              <UygulamaKabugu>
+                <KullaniciYonetimi />
+              </UygulamaKabugu>
+            </KorunanRota>
+          }
+        />
+        <Route
+          path="/menu"
+          element={
+            <KorunanRota izinliRoller={["yonetici"]}>
+              <UygulamaKabugu>
+                <MenuYonetimi />
+              </UygulamaKabugu>
+            </KorunanRota>
+          }
+        />
+        <Route
+          path="/stok"
+          element={
+            <KorunanRota izinliRoller={["yonetici"]}>
+              <UygulamaKabugu>
+                <StokTakip />
+              </UygulamaKabugu>
+            </KorunanRota>
+          }
+        />
+        <Route
+          path="/masalar"
+          element={
+            <KorunanRota izinliRoller={["garson", "yonetici"]}>
+              <UygulamaKabugu>
+                <MasaPlani />
+              </UygulamaKabugu>
+            </KorunanRota>
+          }
+        />
+        <Route
+          path="/siparis"
+          element={
+            <KorunanRota izinliRoller={["garson", "yonetici"]}>
+              <UygulamaKabugu>
+                <SiparisGirisi />
+              </UygulamaKabugu>
+            </KorunanRota>
+          }
+        />
+        <Route
+          path="/rezervasyon"
+          element={
+            <KorunanRota izinliRoller={["garson", "yonetici"]}>
+              <UygulamaKabugu>
+                <RezervasyonEkrani />
+              </UygulamaKabugu>
+            </KorunanRota>
+          }
+        />
+        <Route
+          path="/kds"
+          element={
+            <KorunanRota izinliRoller={["mutfak", "yonetici"]}>
+              <UygulamaKabugu>
+                <KDSEkrani />
+              </UygulamaKabugu>
+            </KorunanRota>
+          }
+        />
+        <Route
+          path="/rapor"
+          element={
+            <KorunanRota izinliRoller={["yonetici"]}>
+              <UygulamaKabugu>
+                <RaporEkrani />
+              </UygulamaKabugu>
+            </KorunanRota>
+          }
+        />
+        <Route
+          path="/yetkisiz"
+          element={
+            <UygulamaKabugu>
+              <YetkisizEkran />
+            </UygulamaKabugu>
+          }
+        />
+      </Routes>
     </BrowserRouter>
   );
 }

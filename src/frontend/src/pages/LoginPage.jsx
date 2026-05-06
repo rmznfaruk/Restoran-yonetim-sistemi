@@ -8,6 +8,13 @@ const quickFacts = [
   "Yonetim ekibi icin sakin, okunakli ve hizli karar odakli bir arayuz sunar.",
 ];
 
+const roleLandingPaths = {
+  yonetici: "/yonetim",
+  garson: "/masalar",
+  kasiyer: "/rapor",
+  mutfak: "/kds",
+};
+
 const LoginPage = ({ onLogin, isAuthenticated }) => {
   const [kullaniciAdi, setKullaniciAdi] = useState("");
   const [sifre, setSifre] = useState("");
@@ -40,13 +47,14 @@ const LoginPage = ({ onLogin, isAuthenticated }) => {
         sifre,
       });
 
+      const hedefYol = roleLandingPaths[response.data?.kullanici?.rol] || "/yonetim";
       onLogin?.(response.data);
 
       if (response.data?.mesaj?.toLowerCase().includes("demo")) {
         setYardimMesaji("Veritabani hazir olana kadar demo yonetici hesabi kullaniliyor.");
       }
 
-      navigate("/yonetim");
+      navigate(hedefYol);
     } catch (error) {
       setHataMesaji(
         error.response?.data?.mesaj ||
@@ -58,7 +66,7 @@ const LoginPage = ({ onLogin, isAuthenticated }) => {
   };
 
   const handleKayitOl = () => {
-    setYardimMesaji("Yeni kullanici akisi veritabani tablolarindan sonra eklenecek.");
+    setYardimMesaji("Yeni kullanici akisi kullanici yonetimi modulu ile ilerleyecek.");
   };
 
   return (
@@ -122,7 +130,7 @@ const LoginPage = ({ onLogin, isAuthenticated }) => {
             </div>
 
             <button className="action-button" type="submit" disabled={yukleniyor}>
-              {yukleniyor ? "Giris kontrol ediliyor..." : "Sisteme Giris Yap"}
+              {yukleniyor ? "Giris yapiliyor..." : "Sisteme Giris Yap"}
             </button>
             <button className="ghost-button" type="button" onClick={handleKayitOl} disabled={yukleniyor}>
               Yeni Kullanici Olustur
