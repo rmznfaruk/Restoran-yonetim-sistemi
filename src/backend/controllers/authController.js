@@ -1,68 +1,120 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const pool = require("../db/pool");
+
+const jwtSecret = process.env.JWT_SECRET || "rys_gizli_anahtar";
+const jwtExpiresIn = process.env.JWT_EXPIRES_IN || "8h";
+const demoPasswordHash =
+  process.env.DEMO_ADMIN_PASSWORD_HASH ||
+  bcrypt.hashSync(process.env.DEMO_ADMIN_PASSWORD || "RysAdmin123!", 10);
+
+const hasDatabaseConfig = Boolean(
+  process.env.DB_HOST &&
+    process.env.DB_PORT &&
+    process.env.DB_NAME &&
+    process.env.DB_USER &&
+    process.env.DB_PASSWORD
+);
+
+const demoUser = {
+  id: 0,
+  kullanici_adi: process.env.DEMO_ADMIN_USERNAME || "admin",
+  sifre_hash: demoPasswordHash,
+  rol: process.env.DEMO_ADMIN_ROLE || "yonetici",
+  hatali_giris: 0,
+  kilit_bitis: null,
+  isDemo: true,
+};
+
+async function findUser(kullaniciAdi) {
+  if (hasDatabaseConfig) {
+    try {
+      const userResult = await pool.query(
+        "SELECT * FROM personel WHERE kullanici_adi = $1",
+        [kullaniciAdi]
+      );
+
+      if (userResult.rows.length > 0) {
+        return userResult.rows[0];
+      }
+    } catch (error) {
+      console.warn(
+        "Veritabani kullanici sorgusu basarisiz, demo hesaba geciliyor:",
+        error.message
+      );
+    }
+  }
+
+  if (kullaniciAdi === demoUser.kullanici_adi) {
+    return demoUser;
+  }
+
+  return null;
+}
 
 exports.login = async (req, res) => {
-    try {
-        const { kullanici_adi, sifre } = req.body;
+  try {
+    const { kullanici_adi: kullaniciAdi, sifre } = req.body;
 
-        // 1. Kullanıcı adı ve şifre girilmiş mi kontrolü
-        if (!kullanici_adi || !sifre) {
-            return res.status(400).json({ mesaj: "Kullanıcı adı ve şifre zorunludur." });
-        }
-
-        // 2. Kullanıcıyı veritabanında bul
-        const userResult = await pool.query('SELECT * FROM personel WHERE kullanici_adi = $1', [kullanici_adi]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(401).json({ mesaj: "Hatalı kullanıcı adı veya şifre." });
-        }
-
-        const user = userResult.rows[0];
-
-        // 3. Kilit kontrolü (5 hatalı giriş ve 15 dakika kuralı)
-        if (user.hatali_giris >= 5 && user.kilit_bitis > new Date()) {
-            return res.status(429).json({ mesaj: "Çok fazla hatalı deneme. Lütfen 15 dakika bekleyin." });
-        }
-
-        // 4. BCrypt ile şifre doğrulama
-        const sifreDogruMu = await bcrypt.compare(sifre, user.sifre_hash);
-
-        if (!sifreDogruMu) {
-            // Hatalı giriş sayacını artır
-            // await pool.query('UPDATE personel SET hatali_giris = hatali_giris + 1 WHERE id = $1', [user.id]);
-            return res.status(401).json({ mesaj: "Hatalı kullanıcı adı veya şifre." });
-        }
-
-        // 5. Başarılı Giriş: Sayacı sıfırla
-        // await pool.query('UPDATE personel SET hatali_giris = 0, kilit_bitis = NULL WHERE id = $1', [user.id]);
-
-        // 6. JWT Token Üretimi
-        const token = jwt.sign(
-            { id: user.id, kullaniciAdi: user.kullanici_adi, rol: user.rol },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN }
-        );
-
-        // Başarılı yanıt
-        res.status(200).json({
-            mesaj: "Giriş başarılı.",
-            token,
-            kullanici: {
-                kullaniciAdi: user.kullanici_adi,
-                rol: user.rol
-            }
-        });
-        */
-
-        res.status(501).json({ mesaj: "Veritabanı bağlantısı bekleniyor. Kod altyapısı hazır." });
-
-    } catch (error) {
-        console.error("Login Hatası:", error);
-        res.status(500).json({ mesaj: "Sunucu hatası oluştu." });
+    if (!kullaniciAdi || !sifre) {
+      return res.status(400).json({ mesaj: "Kullanici adi ve sifre zorunludur." });
     }
+
+    const user = await findUser(kullaniciAdi);
+
+    if (!user) {
+      return res.status(401).json({ mesaj: "Hatali kullanici adi veya sifre." });
+    }
+
+    if (user.hatali_giris >= 5 && user.kilit_bitis && new Date(user.kilit_bitis) > new Date()) {
+      return res
+        .status(429)
+        .json({ mesaj: "Cok fazla hatali deneme. Lutfen 15 dakika bekleyin." });
+    }
+
+    const sifreDogruMu = await bcrypt.compare(sifre, user.sifre_hash);
+
+    if (!sifreDogruMu) {
+      if (!user.isDemo && hasDatabaseConfig) {
+        await pool.query(
+          "UPDATE personel SET hatali_giris = hatali_giris + 1 WHERE id = $1",
+          [user.id]
+        );
+      }
+
+      return res.status(401).json({ mesaj: "Hatali kullanici adi veya sifre." });
+    }
+
+    if (!user.isDemo && hasDatabaseConfig) {
+      await pool.query(
+        "UPDATE personel SET hatali_giris = 0, kilit_bitis = NULL WHERE id = $1",
+        [user.id]
+      );
+    }
+
+    const token = jwt.sign(
+      { id: user.id, kullaniciAdi: user.kullanici_adi, rol: user.rol },
+      jwtSecret,
+      { expiresIn: jwtExpiresIn }
+    );
+
+    return res.status(200).json({
+      mesaj: user.isDemo
+        ? "Giris basarili. Demo yonetici hesabi kullaniliyor."
+        : "Giris basarili.",
+      token,
+      kullanici: {
+        id: user.id,
+        kullaniciAdi: user.kullanici_adi,
+        rol: user.rol,
+      },
+    });
+  } catch (error) {
+    console.error("Login hatasi:", error);
+    return res.status(500).json({ mesaj: "Sunucu hatasi olustu." });
+  }
 };
 
 exports.logout = (req, res) => {
-    // Client tarafı (React) token'ı sileceği için backend'de sadece başarılı mesajı dönüyoruz
-    res.status(200).json({ mesaj: "Başarıyla çıkış yapıldı." });
+  res.status(200).json({ mesaj: "Basariyla cikis yapildi." });
 };
