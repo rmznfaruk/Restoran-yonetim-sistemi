@@ -27,4 +27,7 @@ app.listen(PORT, () => {
     console.log(`RYS Backend sunucusu ${PORT} portunda çalışıyor...`);
 });
 
+const reportsRouter = require('./routes/reports');
+app.use('/api/reports', reportsRouter); //Yusuf ekledi
+
 module.exports = app;
