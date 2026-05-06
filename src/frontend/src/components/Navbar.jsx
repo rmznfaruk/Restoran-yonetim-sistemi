@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 const rolRozetleri = {
   yonetici: "pill pill--warning",
@@ -8,15 +8,12 @@ const rolRozetleri = {
   mutfak: "pill pill--success",
 };
 
-const Navbar = ({ navigationItems }) => {
-  const navigate = useNavigate();
+const Navbar = ({ navigationItems, onLogout }) => {
   const rawUser = localStorage.getItem("rysUser");
   const user = rawUser ? JSON.parse(rawUser) : null;
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("rysUser");
-    navigate("/");
+    onLogout?.();
   };
 
   return (
@@ -37,9 +34,15 @@ const Navbar = ({ navigationItems }) => {
 
       <nav className="topnav">
         {navigationItems.map((item) => (
-          <Link key={item.to} className="topnav-link" to={item.to}>
+          <NavLink
+            key={item.to}
+            className={({ isActive }) =>
+              isActive ? "topnav-link topnav-link--active" : "topnav-link"
+            }
+            to={item.to}
+          >
             {item.label}
-          </Link>
+          </NavLink>
         ))}
         <button className="ghost-button topbar-button" type="button" onClick={handleLogout}>
           Cikis
