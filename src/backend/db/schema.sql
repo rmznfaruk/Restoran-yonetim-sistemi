@@ -1,9 +1,11 @@
 -- 1. Personel Tablosu
 CREATE TABLE personel (
     id SERIAL PRIMARY KEY,
+    ad_soyad VARCHAR(100) NOT NULL,
     kullanici_adi VARCHAR(50) UNIQUE NOT NULL,
     sifre_hash TEXT NOT NULL,
     rol VARCHAR(20) CHECK (rol IN ('garson', 'kasiyer', 'mutfak', 'yonetici')) NOT NULL,
+    aktif_mi BOOLEAN DEFAULT true,
     hatali_giris INT DEFAULT 0,
     kilit_bitis TIMESTAMP
 );

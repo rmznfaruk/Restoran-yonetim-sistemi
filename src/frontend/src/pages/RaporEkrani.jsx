@@ -23,6 +23,16 @@ const periyotEtiketleri = {
   aylik: "Aylik",
 };
 
+const downloadTextFile = (content, fileName, mimeType) => {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
 const RaporEkrani = () => {
   const [periyot, setPeriyot] = useState("gunluk");
   const [rapor, setRapor] = useState(fallbackRapor);
@@ -54,6 +64,37 @@ const RaporEkrani = () => {
     ],
     [rapor]
   );
+
+  const pdfOlarakIndir = () => {
+    const icerik = [
+      `RYS Raporu (${periyotEtiketleri[periyot]})`,
+      `Toplam Ciro: ${rapor?.toplamCiro ?? "-"}`,
+      `Siparis Sayisi: ${rapor?.siparisSayisi ?? "-"}`,
+      `Ortalama Tutar: ${rapor?.ortalamaTutar ?? "-"}`,
+      "",
+      "En Cok Satanlar:",
+      ...(rapor?.enCokSatanlar ?? []).map((urun) => `- ${urun.ad}: ${urun.adet}`),
+      "",
+      "Personel Performansi:",
+      ...(rapor?.personel ?? []).map((personel) => `- ${personel.ad}: ${personel.siparis}`),
+    ].join("\n");
+
+    downloadTextFile(icerik, `rys-rapor-${periyot}.txt`, "text/plain;charset=utf-8");
+  };
+
+  const excelOlarakIndir = () => {
+    const satirlar = [
+      ["Bolum", "Ad", "Deger"],
+      ["KPI", "Toplam Ciro", rapor?.toplamCiro ?? "-"],
+      ["KPI", "Siparis Sayisi", rapor?.siparisSayisi ?? "-"],
+      ["KPI", "Ortalama Tutar", rapor?.ortalamaTutar ?? "-"],
+      ...(rapor?.enCokSatanlar ?? []).map((urun) => ["En Cok Satan", urun.ad, urun.adet]),
+      ...(rapor?.personel ?? []).map((personel) => ["Personel", personel.ad, personel.siparis]),
+    ];
+
+    const csv = satirlar.map((satir) => satir.map((hucre) => `"${String(hucre).replace(/"/g, '""')}"`).join(",")).join("\n");
+    downloadTextFile(csv, `rys-rapor-${periyot}.csv`, "text/csv;charset=utf-8");
+  };
 
   return (
     <div className="page-stack">
@@ -134,10 +175,10 @@ const RaporEkrani = () => {
           </div>
 
           <div className="split-actions" style={{ marginTop: 16 }}>
-            <button className="ghost-button" type="button">
+            <button className="ghost-button" type="button" onClick={pdfOlarakIndir}>
               PDF Olarak Indir
             </button>
-            <button className="action-button" type="button">
+            <button className="action-button" type="button" onClick={excelOlarakIndir}>
               Excel Olarak Indir
             </button>
           </div>
