@@ -12,12 +12,14 @@ import MenuYonetimi from "./pages/MenuYonetimi";
 import RaporEkrani from "./pages/RaporEkrani";
 import RezervasyonEkrani from "./pages/RezervasjonEkrani";
 import SiparisGirisi from "./pages/SiparisGirisi";
+import StokTakip from "./pages/StokTakip";
 import YonetimPaneli from "./pages/YonetimPaneli";
 
 const navigationItems = [
   { to: "/yonetim", label: "Panel" },
   { to: "/kullanici", label: "Kullanicilar" },
   { to: "/menu", label: "Menu" },
+  { to: "/stok", label: "Stok" },
   { to: "/masalar", label: "Masalar" },
   { to: "/rezervasyon", label: "Rezervasyon" },
   { to: "/siparis", label: "Siparis" },
@@ -107,6 +109,16 @@ function App() {
             <KorunanRota izinliRoller={["yonetici"]}>
               <UygulamaKabugu>
                 <MenuYonetimi />
+              </UygulamaKabugu>
+            </KorunanRota>
+          }
+        />
+        <Route
+          path="/stok"
+          element={
+            <KorunanRota izinliRoller={["yonetici"]}>
+              <UygulamaKabugu>
+                <StokTakip />
               </UygulamaKabugu>
             </KorunanRota>
           }

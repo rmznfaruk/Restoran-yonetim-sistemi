@@ -4,37 +4,40 @@ const cors = require('cors');
 
 const app = express();
 
-// Temel Middleware'ler
+// Temel middleware'ler
 app.use(cors());
 app.use(express.json());
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
     res.status(200).json({ durum: 'ok' });
 });
 
-// Rotaları içe aktar ve kullan
-const authRoutes = require('./routes/auth'); // Ramazan'ın eklediği
-app.use('/api/auth', authRoutes); 
+// Rotalari ice aktar ve kullan
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
 
-const tablesRouter = require('./routes/tables'); // Yusuf'un eklediği
+const tablesRouter = require('./routes/tables');
 app.use('/api/tables', tablesRouter);
 
-const ordersRouter = require('./routes/orders'); // Yusuf'un eklediği
+const ordersRouter = require('./routes/orders');
 app.use('/api/orders', ordersRouter);
 
-const productsRouter = require('./routes/products'); // Yusuf'un eklediği
+const productsRouter = require('./routes/products');
 app.use('/api/products', productsRouter);
 
 const usersRouter = require('./routes/users');
 app.use('/api/users', usersRouter);
 
+const paymentsRouter = require('./routes/payments');
+app.use('/api/payments', paymentsRouter);
+
+const reportsRouter = require('./routes/reports');
+app.use('/api/reports', reportsRouter);
+
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
-    console.log(`RYS Backend sunucusu ${PORT} portunda çalışıyor...`);
+    console.log(`RYS Backend sunucusu ${PORT} portunda calisiyor...`);
 });
-
-const reportsRouter = require('./routes/reports');
-app.use('/api/reports', reportsRouter); //Yusuf ekledi
 
 module.exports = app;

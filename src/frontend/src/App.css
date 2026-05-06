@@ -672,9 +672,27 @@ select {
   inset: 0 auto 0 0;
   width: 6px;
   border-radius: 999px;
+}
+
+.metric-card--accent::before {
   background: var(--accent);
 }
 
+.metric-card--olive::before {
+  background: var(--olive);
+}
+
+.metric-card--gold::before {
+  background: var(--gold);
+}
+
+.metric-card--danger::before {
+  background: var(--danger);
+}
+
+.metric-card--neutral::before {
+  background: #7a6f64;
+}
 .dashboard-layout {
   display: grid;
   grid-template-columns: 1.55fr 0.95fr;
