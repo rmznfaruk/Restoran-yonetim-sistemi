@@ -31,7 +31,7 @@ const RaporEkrani = () => {
     const veriGetir = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`http://localhost:3001/api/reports?periyot=${periyot}`, {
+        const res = await axios.get(`/api/reports?periyot=${periyot}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setRapor(res.data);
