@@ -3,31 +3,36 @@ import axios from "axios";
 
 const rolRenkleri = {
   garson: "pill pill--warning",
-  kasiyer: "pill pill--neutral",
-  mutfak: "pill pill--danger",
-  yonetici: "pill pill--success",
+  kasiyer: "pill pill--accent",
+  mutfak: "pill pill--success",
+  yonetici: "pill pill--danger",
+};
+
+const bosForm = {
+  ad_soyad: "",
+  kullanici_adi: "",
+  sifre: "",
+  rol: "garson",
 };
 
 const KullaniciYonetimi = () => {
   const [kullanicilar, setKullanicilar] = useState([]);
-  const [yeniKullanici, setYeniKullanici] = useState({
-    ad_soyad: "",
-    kullanici_adi: "",
-    sifre: "",
-    rol: "garson",
-  });
+  const [yeniKullanici, setYeniKullanici] = useState(bosForm);
   const [duzenlenenId, setDuzenlenenId] = useState(null);
   const [duzenlemeVerisi, setDuzenlemeVerisi] = useState({});
+  const [mesaj, setMesaj] = useState("");
+  const [hata, setHata] = useState("");
   const token = localStorage.getItem("token");
 
   const kullaniciListesiniGetir = useCallback(async () => {
     try {
-      const res = await axios.get("http://localhost:3001/api/users", {
+      const response = await axios.get("/api/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setKullanicilar(res.data);
-    } catch (err) {
-      console.error("Kullanıcılar getirilemedi", err);
+      setKullanicilar(response.data);
+      setHata("");
+    } catch (error) {
+      setHata(error.response?.data?.mesaj || "Kullanicilar getirilemedi.");
     }
   }, [token]);
 
@@ -37,51 +42,63 @@ const KullaniciYonetimi = () => {
 
   const yeniKullaniciEkle = async (e) => {
     e.preventDefault();
+
     try {
-      await axios.post("http://localhost:3001/api/users", yeniKullanici, {
+      await axios.post("/api/users", yeniKullanici, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setYeniKullanici({ ad_soyad: "", kullanici_adi: "", sifre: "", rol: "garson" });
+      setYeniKullanici(bosForm);
+      setMesaj("Yeni kullanici basariyla eklendi.");
+      setHata("");
       kullaniciListesiniGetir();
-    } catch (err) {
-      console.error("Kullanıcı eklenemedi", err);
+    } catch (error) {
+      setMesaj("");
+      setHata(error.response?.data?.mesaj || "Kullanici eklenemedi.");
     }
   };
 
   const duzenlemeyiBaslat = (kullanici) => {
     setDuzenlenenId(kullanici.id);
     setDuzenlemeVerisi(kullanici);
+    setMesaj("");
+    setHata("");
   };
 
   const kullaniciGuncelle = async (id) => {
     try {
-      await axios.patch(`http://localhost:3001/api/users/${id}`, duzenlemeVerisi, {
+      await axios.patch(`/api/users/${id}`, duzenlemeVerisi, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDuzenlenenId(null);
+      setMesaj("Kullanici bilgileri guncellendi.");
+      setHata("");
       kullaniciListesiniGetir();
-    } catch (err) {
-      console.error("Güncelleme hatası", err);
+    } catch (error) {
+      setMesaj("");
+      setHata(error.response?.data?.mesaj || "Kullanici guncellenemedi.");
     }
   };
 
-  const aktifSayisi = kullanicilar.filter((k) => k.aktif_mi).length;
+  const aktifSayisi = kullanicilar.filter((kullanici) => kullanici.aktif_mi).length;
 
   return (
     <div className="page-stack">
       <section className="page-header">
         <div>
           <p className="eyebrow">Personel</p>
-          <h1>Kullanıcı Yönetimi</h1>
-          <p>Yetki, durum ve temel personel kayıtlarını tek panelde yönetin.</p>
+          <h1>Kullanici Yonetimi</h1>
+          <p>Rolleri, aktiflik durumlarini ve yeni personel kayitlarini tek panelde yonetin.</p>
         </div>
         <div className="header-actions">
           <div className="surface-card">
-            <p className="eyebrow">Aktif kullanıcı</p>
+            <p className="eyebrow">Aktif kullanici</p>
             <div className="metric-value">{aktifSayisi}</div>
           </div>
         </div>
       </section>
+
+      {mesaj ? <div className="info-banner">{mesaj}</div> : null}
+      {hata ? <div className="error-banner">{hata}</div> : null}
 
       <section className="table-grid">
         <article className="surface-card">
@@ -91,65 +108,84 @@ const KullaniciYonetimi = () => {
               <thead>
                 <tr>
                   <th>Ad Soyad</th>
-                  <th>Kullanıcı Adı</th>
+                  <th>Kullanici Adi</th>
                   <th>Rol</th>
                   <th>Durum</th>
-                  <th>İşlem</th>
+                  <th>Islem</th>
                 </tr>
               </thead>
               <tbody>
-                {kullanicilar.map((k) => (
-                  <tr key={k.id}>
+                {kullanicilar.map((kullanici) => (
+                  <tr key={kullanici.id}>
                     <td>
-                      {duzenlenenId === k.id ? (
+                      {duzenlenenId === kullanici.id ? (
                         <input
                           className="field-input"
-                          type="text"
                           value={duzenlemeVerisi.ad_soyad}
-                          onChange={(e) => setDuzenlemeVerisi({ ...duzenlemeVerisi, ad_soyad: e.target.value })}
+                          onChange={(e) =>
+                            setDuzenlemeVerisi({ ...duzenlemeVerisi, ad_soyad: e.target.value })
+                          }
                         />
                       ) : (
-                        k.ad_soyad
+                        kullanici.ad_soyad
                       )}
                     </td>
-                    <td>{k.kullanici_adi}</td>
+                    <td>{kullanici.kullanici_adi}</td>
                     <td>
-                      {duzenlenenId === k.id ? (
+                      {duzenlenenId === kullanici.id ? (
                         <select
                           className="field-select"
                           value={duzenlemeVerisi.rol}
-                          onChange={(e) => setDuzenlemeVerisi({ ...duzenlemeVerisi, rol: e.target.value })}
+                          onChange={(e) =>
+                            setDuzenlemeVerisi({ ...duzenlemeVerisi, rol: e.target.value })
+                          }
                         >
                           <option value="garson">Garson</option>
                           <option value="kasiyer">Kasiyer</option>
                           <option value="mutfak">Mutfak</option>
-                          <option value="yonetici">Yönetici</option>
+                          <option value="yonetici">Yonetici</option>
                         </select>
                       ) : (
-                        <span className={rolRenkleri[k.rol] || "pill pill--neutral"}>{k.rol}</span>
-                      )}
-                    </td>
-                    <td>
-                      {duzenlenenId === k.id ? (
-                        <label className="pill pill--neutral">
-                          <input
-                            type="checkbox"
-                            checked={duzenlemeVerisi.aktif_mi}
-                            onChange={(e) => setDuzenlemeVerisi({ ...duzenlemeVerisi, aktif_mi: e.target.checked })}
-                          />
-                          Aktif
-                        </label>
-                      ) : (
-                        <span className={k.aktif_mi ? "pill pill--success" : "pill pill--danger"}>
-                          {k.aktif_mi ? "Aktif" : "Pasif"}
+                        <span className={rolRenkleri[kullanici.rol] || "pill pill--neutral"}>
+                          {kullanici.rol}
                         </span>
                       )}
                     </td>
                     <td>
-                      {duzenlenenId === k.id ? (
-                        <button className="action-button" onClick={() => kullaniciGuncelle(k.id)}>Kaydet</button>
+                      {duzenlenenId === kullanici.id ? (
+                        <label className="pill pill--neutral">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(duzenlemeVerisi.aktif_mi)}
+                            onChange={(e) =>
+                              setDuzenlemeVerisi({
+                                ...duzenlemeVerisi,
+                                aktif_mi: e.target.checked,
+                              })
+                            }
+                          />
+                          Aktif
+                        </label>
                       ) : (
-                        <button className="ghost-button" onClick={() => duzenlemeyiBaslat(k)}>Düzenle</button>
+                        <span className={kullanici.aktif_mi ? "pill pill--success" : "pill pill--danger"}>
+                          {kullanici.aktif_mi ? "Aktif" : "Pasif"}
+                        </span>
+                      )}
+                    </td>
+                    <td className="split-actions">
+                      {duzenlenenId === kullanici.id ? (
+                        <>
+                          <button className="action-button" type="button" onClick={() => kullaniciGuncelle(kullanici.id)}>
+                            Kaydet
+                          </button>
+                          <button className="ghost-button" type="button" onClick={() => setDuzenlenenId(null)}>
+                            Iptal
+                          </button>
+                        </>
+                      ) : (
+                        <button className="ghost-button" type="button" onClick={() => duzenlemeyiBaslat(kullanici)}>
+                          Duzenle
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -160,31 +196,29 @@ const KullaniciYonetimi = () => {
         </article>
 
         <article className="surface-card">
-          <p className="eyebrow">Yeni kayıt</p>
+          <p className="eyebrow">Yeni kayit</p>
           <h3>Personel ekle</h3>
           <form className="stack-form" onSubmit={yeniKullaniciEkle}>
             <div>
               <label className="field-label">Ad Soyad</label>
               <input
                 className="field-input"
-                type="text"
                 value={yeniKullanici.ad_soyad}
                 onChange={(e) => setYeniKullanici({ ...yeniKullanici, ad_soyad: e.target.value })}
                 required
               />
             </div>
             <div>
-              <label className="field-label">Kullanıcı Adı</label>
+              <label className="field-label">Kullanici Adi</label>
               <input
                 className="field-input"
-                type="text"
                 value={yeniKullanici.kullanici_adi}
                 onChange={(e) => setYeniKullanici({ ...yeniKullanici, kullanici_adi: e.target.value })}
                 required
               />
             </div>
             <div>
-              <label className="field-label">Şifre</label>
+              <label className="field-label">Sifre</label>
               <input
                 className="field-input"
                 type="password"
@@ -203,10 +237,12 @@ const KullaniciYonetimi = () => {
                 <option value="garson">Garson</option>
                 <option value="kasiyer">Kasiyer</option>
                 <option value="mutfak">Mutfak</option>
-                <option value="yonetici">Yönetici</option>
+                <option value="yonetici">Yonetici</option>
               </select>
             </div>
-            <button className="action-button" type="submit">Kullanıcıyı Kaydet</button>
+            <button className="action-button" type="submit">
+              Kullaniciyi Kaydet
+            </button>
           </form>
         </article>
       </section>
