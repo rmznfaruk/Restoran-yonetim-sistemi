@@ -15,6 +15,7 @@ import RezervasyonEkrani from "./pages/RezervasjonEkrani";
 import SiparisGirisi from "./pages/SiparisGirisi";
 import StokTakip from "./pages/StokTakip";
 import YonetimPaneli from "./pages/YonetimPaneli";
+import OdemeEkrani from './pages/OdemeEkrani';
 
 const navigationItems = [
   { to: "/yonetim", label: "Panel" },
@@ -191,6 +192,16 @@ function AppRoutes() {
             <KorunanRota izinliRoller={["yonetici"]}>
               <UygulamaKabugu onLogout={handleLogout}>
                 <RaporEkrani />
+              </UygulamaKabugu>
+            </KorunanRota>
+          }
+        />
+        <Route
+          path="/odeme"
+          element={
+            <KorunanRota izinliRoller={["kasiyer", "yonetici"]}>
+              <UygulamaKabugu>
+                <OdemeEkrani />
               </UygulamaKabugu>
             </KorunanRota>
           }

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 const urunStokDurumu = (stok) => {
   if (stok === 0) return { label: "Tukendi", className: "pill pill--danger" };
@@ -7,25 +8,54 @@ const urunStokDurumu = (stok) => {
 };
 
 const MenuYonetimi = () => {
-  const [urunler, setUrunler] = useState([
-    { id: 1, ad: "Adana Kebap", fiyat: "350", kategori: "Ana Yemek", stok: 15 },
-    { id: 2, ad: "Mercimek Corbasi", fiyat: "80", kategori: "Corba", stok: 5 },
-    { id: 3, ad: "Ayran", fiyat: "50", kategori: "Icecek", stok: 0 },
-    { id: 4, ad: "Kunefe", fiyat: "120", kategori: "Tatli", stok: 8 },
-  ]);
+  const [urunler, setUrunler] = useState([]);
   const [modalAcik, setModalAcik] = useState(false);
   const [yeniUrun, setYeniUrun] = useState({ ad: "", fiyat: "", kategori: "Ana Yemek", stok: 0 });
+  // Ramazan'ın login sisteminden gelen token 
+  const token = localStorage.getItem('token'); 
 
-  const urunEkle = (e) => {
+  // Yusuf'un backend'inden ürünleri çekme (Sayfa açıldığında çalışır)
+  useEffect(() => {
+    const urunleriGetir = async () => {
+      try {
+        const response = await axios.get('http://localhost:3001/api/products', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUrunler(response.data);
+      } catch (err) {
+        console.error("Yusuf'un backend'i henüz hazır değil veya kapalı!", err);
+      }
+    };
+    if (token) urunleriGetir();
+  }, [token]);
+
+  const urunEkle = async (e) => { 
     e.preventDefault();
-    setUrunler([...urunler, { ...yeniUrun, id: Date.now() }]);
-    setYeniUrun({ ad: "", fiyat: "", kategori: "Ana Yemek", stok: 0 });
-    setModalAcik(false);
+    try {
+      // Yusuf'un backend'ine yeni ürünü gönderiyoruz 
+      const response = await axios.post('http://localhost:3001/api/products', yeniUrun, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Backend onay verirse listeyi güncelle
+      setUrunler([...urunler, response.data]); 
+      setYeniUrun({ ad: "", fiyat: "", kategori: "Ana Yemek", stok: 0 });
+      setModalAcik(false);
+    } catch (err) {
+      alert("Hata: Ürün veritabanına kaydedilemedi!");
+    }
   };
 
-  const urunSil = (id) => {
-    if (window.confirm("Bu urunu silmek istediginize emin misiniz?")) {
-      setUrunler(urunler.filter((u) => u.id !== id));
+  const urunSil = async (id) => { // async eklendi
+    if (window.confirm("Bu ürünü silmek istediginize emin misiniz?")) {
+      try {
+        // Veritabanından silme isteği 
+        await axios.delete(`http://localhost:3001/api/products/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUrunler(urunler.filter((u) => u.id !== id));
+      } catch (err) {
+        alert("Hata: Silme işlemi başarısız!");
+      }
     }
   };
 
@@ -140,6 +170,7 @@ const MenuYonetimi = () => {
               <input
                 className="field-input"
                 type="number"
+                value={yeniUrun.stok}
                 onChange={(e) => setYeniUrun({ ...yeniUrun, stok: parseInt(e.target.value, 10) || 0 })}
                 required
               />

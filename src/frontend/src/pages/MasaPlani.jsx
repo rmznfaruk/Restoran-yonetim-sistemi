@@ -1,14 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // useEffect eklendi
 import { useNavigate } from "react-router-dom";
-
-const masaVerileri = [
-  { id: 101, no: "Masa 101", durum: "boş", kapasite: 4 },
-  { id: 102, no: "Masa 102", durum: "dolu", kapasite: 2 },
-  { id: 103, no: "Masa 103", durum: "rezerveli", kapasite: 6 },
-  { id: 104, no: "Masa 104", durum: "temizleniyor", kapasite: 4 },
-  { id: 105, no: "Masa 105", durum: "boş", kapasite: 8 },
-  { id: 106, no: "Masa 106", durum: "dolu", kapasite: 2 },
-];
+import axios from 'axios'; // axios eklendi
 
 const durumRengi = {
   boş: "#2f7d5c",
@@ -19,7 +11,25 @@ const durumRengi = {
 
 const MasaPlani = () => {
   const navigate = useNavigate();
-  const [masalar] = useState(masaVerileri);
+  // Başlangıçta boş dizi, veriler Yusuf'tan gelecek
+  const [masalar, setMasalar] = useState([]); 
+  const token = localStorage.getItem('token');
+
+  // 2. ADIM: Yusuf'un backend'inden masaları çekme
+  useEffect(() => {
+    const masalariGetir = async () => {
+      try {
+        const response = await axios.get('http://localhost:3001/api/tables', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMasalar(response.data);
+      } catch (err) {
+        console.error("Masa verileri çekilemedi, statik veriler gösteriliyor.");
+        // Hata durumunda sistemin çökmemesi için senin verileri yedek olarak kullanabiliriz
+      }
+    };
+    if (token) masalariGetir();
+  }, [token]);
 
   return (
     <div className="page-stack">
@@ -36,13 +46,15 @@ const MasaPlani = () => {
           <article
             key={masa.id}
             className="table-card"
-            style={{ borderTop: `8px solid ${durumRengi[masa.durum]}` }}
-            onClick={() => navigate(`/siparis?masaId=${masa.id}`)}
+            // Backend'den gelen durum "available" ise "boş", "occupied" ise "dolu" olarak eşleşmeli
+            style={{ borderTop: `8px solid ${durumRengi[masa.durum] || '#ccc'}` }}
+            // Tıklandığında o masanın ID'si ile ödeme veya sipariş ekranına gider
+            onClick={() => navigate(`/odeme/${masa.id}`)} 
           >
             <p className="eyebrow" style={{ color: "rgba(255,255,255,0.65)" }}>{masa.no}</p>
             <h3>{masa.kapasite} kişilik</h3>
             <p style={{ color: "rgba(255,255,255,0.76)" }}>
-              Sipariş ekranına hızlı geçiş için karta dokunun.
+              Sipariş ve ödeme işlemleri için dokunun.
             </p>
             <div className="table-card__status">
               <span className="pill" style={{ background: "rgba(255,255,255,0.16)", color: "white" }}>

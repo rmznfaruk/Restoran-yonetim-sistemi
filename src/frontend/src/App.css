@@ -426,9 +426,11 @@ select {
 }
 
 .table-shell {
-  overflow: auto;
+  width: 100%; /* Tablonun dışarı taşmasını engeller */
+  overflow-x: auto; /* Mobilde tabloyu sağa sola kaydırılabilir yapar */
   border-radius: 18px;
   border: 1px solid rgba(70, 55, 34, 0.08);
+  background: #1a1a1a; /* Sayfa ile uyumlu koyu arka plan */
 }
 
 .data-table {
@@ -790,4 +792,18 @@ select {
   .data-table td {
     padding: 12px 10px;
   }
+  .stats-grid, .grid-layout {
+        grid-template-columns: 1fr !important;
+        gap: 16px;
+    }
+    .table-shell {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* Mobilde daha yumuşak kaydırma */
+    }
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
 }
