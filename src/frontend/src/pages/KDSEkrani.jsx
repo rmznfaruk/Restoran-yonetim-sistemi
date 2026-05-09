@@ -17,7 +17,7 @@ const fallbackSiparisler = [
     masa_no: 4,
     durum: "hazir",
     olusturma_zamani: new Date(Date.now() - 12 * 60000).toISOString(),
-    kalemler: [{ urun_adi: "Mercimek Çorbası", miktar: 3 }],
+    kalemler: [{ urun_adi: "Mercimek Corbasi", miktar: 3 }],
   },
 ];
 
@@ -28,10 +28,12 @@ const KDSEkrani = () => {
   const siparisleriGetir = async () => {
     try {
       const response = await axios.get("/api/orders");
-      const aktifSiparisler = response.data.filter((siparis) => siparis.durum !== "kapali" && siparis.durum !== "iptal");
+      const aktifSiparisler = response.data.filter(
+        (siparis) => siparis.durum !== "kapali" && siparis.durum !== "iptal"
+      );
       setSiparisler(aktifSiparisler);
     } catch (error) {
-      console.error("Siparişler çekilirken hata oluştu:", error);
+      console.error("Siparisler cekilirken hata olustu:", error);
     }
   };
 
@@ -51,7 +53,7 @@ const KDSEkrani = () => {
       await axios.patch(`/api/orders/${id}`, { durum: "hazir" });
       siparisleriGetir();
     } catch (error) {
-      console.error("Sipariş güncellenirken hata:", error);
+      console.error("Siparis guncellenirken hata:", error);
     }
   };
 
@@ -61,9 +63,18 @@ const KDSEkrani = () => {
   };
 
   const renkBelirle = (dakika, durum) => {
-    if (durum === "hazir") return "#2f7d5c";
-    if (dakika > 10) return "#b84d4d";
-    if (dakika >= 5) return "#d7b66f";
+    if (durum === "hazir") {
+      return "#2f7d5c";
+    }
+
+    if (dakika > 10) {
+      return "#b84d4d";
+    }
+
+    if (dakika >= 5) {
+      return "#d7b66f";
+    }
+
     return "#6f7b52";
   };
 
@@ -72,11 +83,11 @@ const KDSEkrani = () => {
       <section className="page-header">
         <div>
           <p className="eyebrow">Mutfak operasyonu</p>
-          <h1>KDS Ekranı</h1>
-          <p>Hazırlık süresi uzayan siparişleri hızlıca görün ve akışı mutfaktan yönetin.</p>
+          <h1>KDS Ekrani</h1>
+          <p>Hazirlik suresi uzayan siparisleri hizlica gorun ve akisi mutfaktan yonetin.</p>
         </div>
         <div className="surface-card">
-          <p className="eyebrow">Aktif sipariş</p>
+          <p className="eyebrow">Aktif siparis</p>
           <div className="metric-value">{siparisler.length}</div>
         </div>
       </section>
@@ -89,8 +100,13 @@ const KDSEkrani = () => {
           return (
             <article key={siparis.id} className="ticket-card" style={{ borderTopColor: kenarlikRengi }}>
               <p className="eyebrow">Masa {siparis.masa_no}</p>
-              <h3>Sipariş #{siparis.id}</h3>
-              <p className="helper-text">Bekleme süresi: {beklemeDakikasi} dk</p>
+              <h3>Siparis #{siparis.id}</h3>
+              <p className="helper-text">Bekleme suresi: {beklemeDakikasi} dk</p>
+              <p className="helper-text">
+                {siparis.durum === "hazir"
+                  ? "Siparis hazir, garson almaya gelebilir."
+                  : "Masa siparisi gonderildi."}
+              </p>
 
               <ul className="ticket-list">
                 {siparis.kalemler?.map((kalem, index) => (
@@ -101,9 +117,11 @@ const KDSEkrani = () => {
               </ul>
 
               {siparis.durum === "hazir" ? (
-                <span className="pill pill--success">Hazır</span>
+                <span className="pill pill--success">Hazir</span>
               ) : (
-                <button className="action-button" onClick={() => hazirIsaretle(siparis.id)}>Hazır olarak işaretle</button>
+                <button className="action-button" type="button" onClick={() => hazirIsaretle(siparis.id)}>
+                  Hazir olarak isaretle
+                </button>
               )}
             </article>
           );
