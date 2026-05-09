@@ -1,61 +1,131 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
+const varsayilanForm = {
+  ad: "",
+  fiyat: "",
+  kategori: "Ana Yemek",
+  stok: 0,
+};
+
+const urunBicimlendir = (urun) => ({
+  ...urun,
+  kategori: urun.kategori || urun.kategori_adi || "Belirtilmedi",
+  stok: Number(urun.stok ?? urun.stok_miktar ?? 0),
+  fiyat: Number(urun.fiyat ?? 0),
+});
+
 const urunStokDurumu = (stok) => {
-  if (stok === 0) return { label: "Tukendi", className: "pill pill--danger" };
-  if (stok < 10) return { label: `Kritik (${stok})`, className: "pill pill--warning" };
+  if (stok === 0) {
+    return { label: "Tukendi", className: "pill pill--danger" };
+  }
+
+  if (stok < 10) {
+    return { label: `Kritik (${stok})`, className: "pill pill--warning" };
+  }
+
   return { label: `Yeterli (${stok})`, className: "pill pill--success" };
 };
 
 const MenuYonetimi = () => {
   const [urunler, setUrunler] = useState([]);
   const [modalAcik, setModalAcik] = useState(false);
-  const [yeniUrun, setYeniUrun] = useState({ ad: "", fiyat: "", kategori: "Ana Yemek", stok: 0 });
-  // Ramazan'ın login sisteminden gelen token 
-  const token = localStorage.getItem('token'); 
+  const [yeniUrun, setYeniUrun] = useState(varsayilanForm);
+  const [yukleniyor, setYukleniyor] = useState(false);
+  const [mesaj, setMesaj] = useState("");
+  const [hata, setHata] = useState("");
+  const token = localStorage.getItem("token");
 
-  // Yusuf'un backend'inden ürünleri çekme (Sayfa açıldığında çalışır)
   useEffect(() => {
+    let aktif = true;
+
     const urunleriGetir = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/products', {
-          headers: { Authorization: `Bearer ${token}` }
+        const response = await axios.get("/api/products", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        setUrunler(response.data);
+
+        if (!aktif) {
+          return;
+        }
+
+        setUrunler((response.data || []).map(urunBicimlendir));
+        setHata("");
       } catch (err) {
-        console.error("Yusuf'un backend'i henüz hazır değil veya kapalı!", err);
+        if (!aktif) {
+          return;
+        }
+
+        console.error("Urunler alinamadi:", err);
+        setHata("Urun listesi alinamadi. Backend baglantisini kontrol edin.");
       }
     };
-    if (token) urunleriGetir();
+
+    urunleriGetir();
+
+    return () => {
+      aktif = false;
+    };
   }, [token]);
 
-  const urunEkle = async (e) => { 
+  const istatistikler = useMemo(
+    () => ({
+      toplam: urunler.length,
+      kritik: urunler.filter((urun) => urun.stok > 0 && urun.stok < 10).length,
+      tukenen: urunler.filter((urun) => urun.stok === 0).length,
+    }),
+    [urunler]
+  );
+
+  const urunEkle = async (e) => {
     e.preventDefault();
+
     try {
-      // Yusuf'un backend'ine yeni ürünü gönderiyoruz 
-      const response = await axios.post('http://localhost:3001/api/products', yeniUrun, {
-        headers: { Authorization: `Bearer ${token}` }
+      setYukleniyor(true);
+      setHata("");
+      setMesaj("");
+
+      const payload = {
+        ad: yeniUrun.ad.trim(),
+        fiyat: Number(yeniUrun.fiyat),
+        kategori: yeniUrun.kategori,
+        stok: Number(yeniUrun.stok),
+      };
+
+      const response = await axios.post("/api/products", payload, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      // Backend onay verirse listeyi güncelle
-      setUrunler([...urunler, response.data]); 
-      setYeniUrun({ ad: "", fiyat: "", kategori: "Ana Yemek", stok: 0 });
+
+      setUrunler((onceki) => [...onceki, urunBicimlendir(response.data)]);
+      setYeniUrun(varsayilanForm);
       setModalAcik(false);
+      setMesaj("Urun basariyla kaydedildi.");
     } catch (err) {
-      alert("Hata: Ürün veritabanına kaydedilemedi!");
+      console.error("Urun eklenemedi:", err);
+      setHata(err.response?.data?.error || "Urun veritabanina kaydedilemedi.");
+    } finally {
+      setYukleniyor(false);
     }
   };
 
-  const urunSil = async (id) => { // async eklendi
-    if (window.confirm("Bu ürünü silmek istediginize emin misiniz?")) {
-      try {
-        // Veritabanından silme isteği 
-        await axios.delete(`http://localhost:3001/api/products/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setUrunler(urunler.filter((u) => u.id !== id));
-      } catch (err) {
-        alert("Hata: Silme işlemi başarısız!");
-      }
+  const urunSil = async (id) => {
+    if (!window.confirm("Bu urunu silmek istediginize emin misiniz?")) {
+      return;
+    }
+
+    try {
+      setHata("");
+      setMesaj("");
+
+      await axios.delete(`/api/products/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      setUrunler((onceki) => onceki.filter((urun) => urun.id !== id));
+      setMesaj("Urun listeden silindi.");
+    } catch (err) {
+      console.error("Urun silinemedi:", err);
+      setHata(err.response?.data?.error || "Silme islemi basarisiz oldu.");
     }
   };
 
@@ -68,24 +138,27 @@ const MenuYonetimi = () => {
           <p>Kategori, fiyat ve stok gorunumunu tek bakista izleyin.</p>
         </div>
         <div className="header-actions">
-          <button className="action-button" onClick={() => setModalAcik(true)}>
+          <button className="action-button" type="button" onClick={() => setModalAcik(true)}>
             Yeni Urun Ekle
           </button>
         </div>
       </section>
 
+      {mesaj ? <div className="info-banner">{mesaj}</div> : null}
+      {hata ? <div className="error-banner">{hata}</div> : null}
+
       <section className="stats-grid">
         <article className="surface-card">
           <p className="eyebrow">Toplam urun</p>
-          <div className="metric-value">{urunler.length}</div>
+          <div className="metric-value">{istatistikler.toplam}</div>
         </article>
         <article className="surface-card">
           <p className="eyebrow">Kritik stok</p>
-          <div className="metric-value">{urunler.filter((u) => u.stok > 0 && u.stok < 10).length}</div>
+          <div className="metric-value">{istatistikler.kritik}</div>
         </article>
         <article className="surface-card">
           <p className="eyebrow">Tukenen urun</p>
-          <div className="metric-value">{urunler.filter((u) => u.stok === 0).length}</div>
+          <div className="metric-value">{istatistikler.tukenen}</div>
         </article>
       </section>
 
@@ -105,6 +178,7 @@ const MenuYonetimi = () => {
             <tbody>
               {urunler.map((urun) => {
                 const stok = urunStokDurumu(urun.stok);
+
                 return (
                   <tr key={urun.id}>
                     <td>{urun.ad}</td>
@@ -116,7 +190,7 @@ const MenuYonetimi = () => {
                       <span className={stok.className}>{stok.label}</span>
                     </td>
                     <td className="split-actions">
-                      <button className="ghost-button" type="button">
+                      <button className="ghost-button" type="button" disabled>
                         Duzenle
                       </button>
                       <button className="action-button" type="button" onClick={() => urunSil(urun.id)}>
@@ -131,7 +205,7 @@ const MenuYonetimi = () => {
         </div>
       </article>
 
-      {modalAcik && (
+      {modalAcik ? (
         <section className="surface-card">
           <p className="eyebrow">Hizli ekleme</p>
           <h3>Yeni urun olustur</h3>
@@ -140,6 +214,7 @@ const MenuYonetimi = () => {
               <label className="field-label">Urun adi</label>
               <input
                 className="field-input"
+                value={yeniUrun.ad}
                 onChange={(e) => setYeniUrun({ ...yeniUrun, ad: e.target.value })}
                 required
               />
@@ -148,6 +223,7 @@ const MenuYonetimi = () => {
               <label className="field-label">Kategori</label>
               <select
                 className="field-select"
+                value={yeniUrun.kategori}
                 onChange={(e) => setYeniUrun({ ...yeniUrun, kategori: e.target.value })}
               >
                 <option value="Ana Yemek">Ana Yemek</option>
@@ -161,6 +237,9 @@ const MenuYonetimi = () => {
               <input
                 className="field-input"
                 type="number"
+                min="0"
+                step="0.01"
+                value={yeniUrun.fiyat}
                 onChange={(e) => setYeniUrun({ ...yeniUrun, fiyat: e.target.value })}
                 required
               />
@@ -170,22 +249,31 @@ const MenuYonetimi = () => {
               <input
                 className="field-input"
                 type="number"
+                min="0"
                 value={yeniUrun.stok}
                 onChange={(e) => setYeniUrun({ ...yeniUrun, stok: parseInt(e.target.value, 10) || 0 })}
                 required
               />
             </div>
             <div className="split-actions">
-              <button className="action-button" type="submit">
-                Kaydet
+              <button className="action-button" type="submit" disabled={yukleniyor}>
+                {yukleniyor ? "Kaydediliyor..." : "Kaydet"}
               </button>
-              <button className="ghost-button" type="button" onClick={() => setModalAcik(false)}>
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => {
+                  setModalAcik(false);
+                  setHata("");
+                }}
+                disabled={yukleniyor}
+              >
                 Vazgec
               </button>
             </div>
           </form>
         </section>
-      )}
+      ) : null}
     </div>
   );
 };
