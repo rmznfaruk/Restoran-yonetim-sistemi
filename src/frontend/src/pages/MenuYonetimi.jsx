@@ -31,6 +31,8 @@ const MenuYonetimi = () => {
   const [urunler, setUrunler] = useState([]);
   const [modalAcik, setModalAcik] = useState(false);
   const [yeniUrun, setYeniUrun] = useState(varsayilanForm);
+  const [duzenlenenId, setDuzenlenenId] = useState(null);
+  const [duzenlemeFormu, setDuzenlemeFormu] = useState(varsayilanForm);
   const [yukleniyor, setYukleniyor] = useState(false);
   const [mesaj, setMesaj] = useState("");
   const [hata, setHata] = useState("");
@@ -103,6 +105,53 @@ const MenuYonetimi = () => {
     } catch (err) {
       console.error("Urun eklenemedi:", err);
       setHata(err.response?.data?.error || "Urun veritabanina kaydedilemedi.");
+    } finally {
+      setYukleniyor(false);
+    }
+  };
+
+  const duzenlemeyiBaslat = (urun) => {
+    setDuzenlenenId(urun.id);
+    setDuzenlemeFormu({
+      ad: urun.ad || "",
+      fiyat: String(urun.fiyat ?? ""),
+      kategori: urun.kategori || "Ana Yemek",
+      stok: Number(urun.stok ?? 0),
+    });
+    setMesaj("");
+    setHata("");
+  };
+
+  const duzenlemeyiIptalEt = () => {
+    setDuzenlenenId(null);
+    setDuzenlemeFormu(varsayilanForm);
+  };
+
+  const urunGuncelle = async (id) => {
+    try {
+      setYukleniyor(true);
+      setHata("");
+      setMesaj("");
+
+      const payload = {
+        ad: duzenlemeFormu.ad.trim(),
+        fiyat: Number(duzenlemeFormu.fiyat),
+        kategori: duzenlemeFormu.kategori,
+        stok: Number(duzenlemeFormu.stok),
+      };
+
+      const response = await axios.patch(`/api/products/${id}`, payload, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      setUrunler((onceki) =>
+        onceki.map((urun) => (urun.id === id ? urunBicimlendir(response.data) : urun))
+      );
+      duzenlemeyiIptalEt();
+      setMesaj("Urun bilgileri guncellendi.");
+    } catch (err) {
+      console.error("Urun guncellenemedi:", err);
+      setHata(err.response?.data?.error || "Urun guncellenemedi.");
     } finally {
       setYukleniyor(false);
     }
@@ -181,21 +230,105 @@ const MenuYonetimi = () => {
 
                 return (
                   <tr key={urun.id}>
-                    <td>{urun.ad}</td>
                     <td>
-                      <span className="pill pill--neutral">{urun.kategori}</span>
+                      {duzenlenenId === urun.id ? (
+                        <input
+                          className="field-input"
+                          value={duzenlemeFormu.ad}
+                          onChange={(e) =>
+                            setDuzenlemeFormu({ ...duzenlemeFormu, ad: e.target.value })
+                          }
+                          required
+                        />
+                      ) : (
+                        urun.ad
+                      )}
                     </td>
-                    <td>{urun.fiyat} TL</td>
                     <td>
-                      <span className={stok.className}>{stok.label}</span>
+                      {duzenlenenId === urun.id ? (
+                        <select
+                          className="field-select"
+                          value={duzenlemeFormu.kategori}
+                          onChange={(e) =>
+                            setDuzenlemeFormu({ ...duzenlemeFormu, kategori: e.target.value })
+                          }
+                        >
+                          <option value="Ana Yemek">Ana Yemek</option>
+                          <option value="Corba">Corba</option>
+                          <option value="Tatli">Tatli</option>
+                          <option value="Icecek">Icecek</option>
+                          <option value="Baslangic">Baslangic</option>
+                        </select>
+                      ) : (
+                        <span className="pill pill--neutral">{urun.kategori}</span>
+                      )}
+                    </td>
+                    <td>
+                      {duzenlenenId === urun.id ? (
+                        <input
+                          className="field-input"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={duzenlemeFormu.fiyat}
+                          onChange={(e) =>
+                            setDuzenlemeFormu({ ...duzenlemeFormu, fiyat: e.target.value })
+                          }
+                          required
+                        />
+                      ) : (
+                        `${urun.fiyat} TL`
+                      )}
+                    </td>
+                    <td>
+                      {duzenlenenId === urun.id ? (
+                        <input
+                          className="field-input"
+                          type="number"
+                          min="0"
+                          value={duzenlemeFormu.stok}
+                          onChange={(e) =>
+                            setDuzenlemeFormu({
+                              ...duzenlemeFormu,
+                              stok: parseInt(e.target.value, 10) || 0,
+                            })
+                          }
+                          required
+                        />
+                      ) : (
+                        <span className={stok.className}>{stok.label}</span>
+                      )}
                     </td>
                     <td className="split-actions">
-                      <button className="ghost-button" type="button" disabled>
-                        Duzenle
-                      </button>
-                      <button className="action-button" type="button" onClick={() => urunSil(urun.id)}>
-                        Sil
-                      </button>
+                      {duzenlenenId === urun.id ? (
+                        <>
+                          <button
+                            className="action-button"
+                            type="button"
+                            onClick={() => urunGuncelle(urun.id)}
+                            disabled={yukleniyor}
+                          >
+                            {yukleniyor ? "Kaydediliyor..." : "Kaydet"}
+                          </button>
+                          <button
+                            className="ghost-button"
+                            type="button"
+                            onClick={duzenlemeyiIptalEt}
+                            disabled={yukleniyor}
+                          >
+                            Vazgec
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button className="ghost-button" type="button" onClick={() => duzenlemeyiBaslat(urun)}>
+                            Duzenle
+                          </button>
+                          <button className="action-button" type="button" onClick={() => urunSil(urun.id)}>
+                            Sil
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 );

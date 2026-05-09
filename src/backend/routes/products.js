@@ -156,17 +156,83 @@ router.post("/", async (req, res) => {
 
 router.patch("/:id", async (req, res) => {
   const { id } = req.params;
-  const { ad, fiyat, mevcut } = req.body;
+  const {
+    ad,
+    fiyat,
+    kategori,
+    kategori_id: kategoriIdGelen,
+    stok,
+    stok_miktar: stokMiktarGelen,
+    kritik_seviye: kritikSeviyeGelen,
+    mevcut,
+  } = req.body;
 
   try {
+    let kategoriId = kategoriIdGelen || null;
+
+    if (!kategoriId && kategori) {
+      const kategoriKaydi = await kategoriBulVeyaOlustur(kategori);
+      kategoriId = kategoriKaydi?.id || null;
+    }
+
+    const stokMiktar = stokMiktarGelen ?? stok;
+
     const result = await pool.query(
-      "UPDATE urunler SET ad = COALESCE($1, ad), fiyat = COALESCE($2, fiyat), mevcut = COALESCE($3, mevcut) WHERE id = $4 RETURNING *",
-      [ad, fiyat, mevcut, id]
+      `
+        UPDATE urunler
+        SET
+          ad = COALESCE($1, ad),
+          fiyat = COALESCE($2, fiyat),
+          mevcut = COALESCE($3, mevcut),
+          kategori_id = COALESCE($4, kategori_id),
+          stok_miktar = COALESCE($5, stok_miktar),
+          kritik_seviye = COALESCE($6, kritik_seviye)
+        WHERE id = $7
+        RETURNING *
+      `,
+      [
+        ad,
+        fiyat === undefined ? null : Number(fiyat),
+        mevcut,
+        kategoriId,
+        stokMiktar === undefined ? null : Number(stokMiktar),
+        kritikSeviyeGelen === undefined ? null : Number(kritikSeviyeGelen),
+        id,
+      ]
     );
-    res.json(result.rows[0]);
+
+    if (!result.rows[0]) {
+      return res.status(404).json({ error: "Urun bulunamadi." });
+    }
+
+    let kategoriAdi = kategori || null;
+
+    if (!kategoriAdi && result.rows[0].kategori_id) {
+      const kategoriSonuc = await pool.query("SELECT ad FROM kategoriler WHERE id = $1", [
+        result.rows[0].kategori_id,
+      ]);
+      kategoriAdi = kategoriSonuc.rows[0]?.ad || null;
+    }
+
+    res.json(
+      urunSatiriBicimlendir({
+        ...result.rows[0],
+        kategori: kategoriAdi,
+        kategori_adi: kategoriAdi,
+      })
+    );
   } catch (err) {
     console.warn("Products API fallback urun guncelleme kullandi:", err.message);
-    const guncelUrun = updateProduct(id, { ad, fiyat, mevcut });
+    const guncelUrun = updateProduct(id, {
+      ad,
+      fiyat,
+      kategori,
+      kategori_id: kategoriIdGelen,
+      stok,
+      stok_miktar: stokMiktarGelen,
+      kritik_seviye: kritikSeviyeGelen,
+      mevcut,
+    });
 
     if (!guncelUrun) {
       return res.status(404).json({ error: "Urun bulunamadi." });

@@ -116,10 +116,15 @@ const updateProduct = (id, updates) => {
       return item;
     }
 
+    const categoryId = updates.kategori_id || (updates.kategori ? ensureCategory(updates.kategori).id : item.kategori_id);
+
     updated = {
       ...item,
+      kategori_id: categoryId,
       ad: updates.ad ?? item.ad,
       fiyat: updates.fiyat ?? item.fiyat,
+      stok_miktar: Number(updates.stok_miktar ?? updates.stok ?? item.stok_miktar),
+      kritik_seviye: Number(updates.kritik_seviye ?? item.kritik_seviye),
       mevcut: typeof updates.mevcut === "boolean" ? updates.mevcut : item.mevcut,
     };
 
