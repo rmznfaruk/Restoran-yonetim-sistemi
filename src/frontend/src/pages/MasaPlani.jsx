@@ -11,6 +11,11 @@ const fallbackMasalar = [
   { id: 106, no: "Masa 106", durum: "dolu", kapasite: 2 },
 ];
 
+const bosMasaFormu = {
+  masa_no: "",
+  kapasite: "",
+};
+
 const durumRengi = {
   bos: "#2f7d5c",
   dolu: "#b84d4d",
@@ -57,6 +62,8 @@ const MasaPlani = () => {
   const [ornekVeri, setOrnekVeri] = useState(true);
   const [mesaj, setMesaj] = useState("");
   const [hata, setHata] = useState("");
+  const [yeniMasa, setYeniMasa] = useState(bosMasaFormu);
+  const [ekleniyor, setEkleniyor] = useState(false);
 
   const masalariGetir = useCallback(async () => {
     try {
@@ -97,6 +104,35 @@ const MasaPlani = () => {
     }
   };
 
+  const masaEkle = async (event) => {
+    event.preventDefault();
+
+    try {
+      setEkleniyor(true);
+      setMesaj("");
+      setHata("");
+
+      await axios.post(
+        "/api/tables",
+        {
+          masa_no: Number(yeniMasa.masa_no),
+          kapasite: Number(yeniMasa.kapasite),
+          durum: "bos",
+        },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+
+      setYeniMasa(bosMasaFormu);
+      setMesaj("Yeni masa basariyla eklendi.");
+      masalariGetir();
+    } catch (error) {
+      console.error("Masa eklenemedi:", error);
+      setHata(error.response?.data?.error || "Yeni masa eklenemedi.");
+    } finally {
+      setEkleniyor(false);
+    }
+  };
+
   const kartaTikla = (masa) => {
     const kasayaYonelebilir = user?.rol === "kasiyer" || user?.rol === "yonetici";
 
@@ -119,7 +155,7 @@ const MasaPlani = () => {
         <div>
           <p className="eyebrow">Salon gorunumu</p>
           <h1>Masa Plani</h1>
-          <p>Anlik masa durumlarini gorun, siparis ve odeme akisina dogrudan gecin.</p>
+          <p>Anlik masa durumlarini gorun, yeni masa ekleyin ve siparis ile odeme akisina dogrudan gecin.</p>
         </div>
         <div className="header-actions">
           <span className={ornekVeri ? "pill pill--warning" : "pill pill--success"}>
@@ -130,6 +166,55 @@ const MasaPlani = () => {
 
       {mesaj ? <div className="info-banner">{mesaj}</div> : null}
       {hata ? <div className="error-banner">{hata}</div> : null}
+
+      <section className="grid-layout">
+        <article className="surface-card">
+          <p className="eyebrow">Hizli ekleme</p>
+          <h3>Yeni masa ekle</h3>
+          <form className="stack-form" onSubmit={masaEkle}>
+            <div>
+              <label className="field-label">Masa numarasi</label>
+              <input
+                className="field-input"
+                type="number"
+                min="1"
+                value={yeniMasa.masa_no}
+                onChange={(e) => setYeniMasa((onceki) => ({ ...onceki, masa_no: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label className="field-label">Kapasite</label>
+              <input
+                className="field-input"
+                type="number"
+                min="1"
+                value={yeniMasa.kapasite}
+                onChange={(e) => setYeniMasa((onceki) => ({ ...onceki, kapasite: e.target.value }))}
+                required
+              />
+            </div>
+            <button className="action-button" type="submit" disabled={ekleniyor}>
+              {ekleniyor ? "Ekleniyor..." : "Masayi ekle"}
+            </button>
+          </form>
+        </article>
+
+        <article className="surface-card">
+          <p className="eyebrow">Ozet</p>
+          <h3>Aktif masa durumu</h3>
+          <div className="stats-grid">
+            <article className="surface-card">
+              <p className="eyebrow">Toplam masa</p>
+              <div className="metric-value">{masalar.length}</div>
+            </article>
+            <article className="surface-card">
+              <p className="eyebrow">Bos masa</p>
+              <div className="metric-value">{masalar.filter((masa) => masa.durum === "bos").length}</div>
+            </article>
+          </div>
+        </article>
+      </section>
 
       <section className="cards-grid">
         {masalar.map((masa) => (

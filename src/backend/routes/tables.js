@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db/pool");
-const { listTables, updateTable } = require("../services/demoStore");
+const { createTable, listTables, updateTable } = require("../services/demoStore");
 
 router.get("/", async (_req, res) => {
   try {
@@ -10,6 +10,32 @@ router.get("/", async (_req, res) => {
   } catch (err) {
     console.warn("Tables API fallback kullandi:", err.message);
     res.json(listTables());
+  }
+});
+
+router.post("/", async (req, res) => {
+  const { masa_no, kapasite, durum = "bos" } = req.body;
+
+  if (!masa_no || !kapasite) {
+    return res.status(400).json({ error: "masa_no ve kapasite zorunludur." });
+  }
+
+  try {
+    const result = await pool.query(
+      "INSERT INTO masalar (masa_no, durum, kapasite) VALUES ($1, $2, $3) RETURNING *",
+      [Number(masa_no), durum, Number(kapasite)]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.warn("Tables API fallback ekleme kullandi:", err.message);
+
+    const mevcutMasa = listTables().find((masa) => String(masa.masa_no) === String(masa_no));
+    if (mevcutMasa) {
+      return res.status(409).json({ error: "Bu masa numarasi zaten kayitli." });
+    }
+
+    const yeniMasa = createTable({ masa_no, kapasite, durum });
+    res.status(201).json(yeniMasa);
   }
 });
 

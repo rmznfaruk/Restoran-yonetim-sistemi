@@ -157,6 +157,18 @@ const deleteProduct = (id) => {
 
 const listTables = () => tables.map((item) => ({ ...item }));
 
+const createTable = ({ masa_no, kapasite, durum = "bos" }) => {
+  const yeniMasa = {
+    id: nextId(tables),
+    masa_no: Number(masa_no),
+    kapasite: Number(kapasite || 0),
+    durum,
+  };
+
+  tables = [...tables, yeniMasa].sort((a, b) => a.masa_no - b.masa_no);
+  return { ...yeniMasa };
+};
+
 const updateTable = (id, updates) => {
   let updated = null;
 
@@ -315,6 +327,7 @@ module.exports = {
   createOrder,
   createPayment,
   createProduct,
+  createTable,
   deleteProduct,
   findActiveOrderByTable,
   listCategories,
