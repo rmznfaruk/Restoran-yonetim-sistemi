@@ -1,111 +1,151 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom'; 
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useNavigate, useParams } from "react-router-dom";
+
+const odemeSecenekleri = [
+  { key: "kart", label: "Kredi Karti", value: "Kredi Karti", style: "action-button" },
+  { key: "nakit", label: "Nakit Odeme", value: "Nakit", style: "action-button" },
+  { key: "mobil", label: "Mobil Odeme", value: "Mobil", style: "ghost-button" },
+];
 
 const OdemeEkrani = () => {
-    const { id } = useParams(); // URL'deki ID'yi yakalıyoruz (Örn: /odeme/3)
-    const [siparis, setSiparis] = useState({ toplam_tutar: 0, urunler: [] });
-    const [kisiSayisi, setKisiSayisi] = useState(1);
-    const [yukleniyor, setYukleniyor] = useState(false);
-    const token = localStorage.getItem('token');
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const token = localStorage.getItem("token");
+  const [siparis, setSiparis] = useState({ toplam_tutar: 0, urunler: [] });
+  const [yukleniyor, setYukleniyor] = useState(false);
+  const [hata, setHata] = useState("");
 
-    useEffect(() => {
-        const siparisDetayGetir = async () => {
-            try {
-                // Dinamik ID kullanımı:
-                const response = await axios.get(`http://localhost:3001/api/orders/masa/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setSiparis(response.data);
-            } catch (err) {
-                console.error("Sipariş verileri alınamadı.");
-            }
-        };
-        if (token && id) siparisDetayGetir();
-    }, [token, id]);
+  useEffect(() => {
+    let aktif = true;
 
-    const odemeYap = async (yontem) => {
-        if (yukleniyor) return;
-        setYukleniyor(true);
-        try {
-            // Ödeme kaydında dinamik ID:
-            await axios.post('http://localhost:3001/api/payments', {
-                masa_id: id, 
-                odeme_yontemi: yontem,
-                tutar: siparis.toplam_tutar
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+    const siparisDetayGetir = async () => {
+      try {
+        const response = await axios.get(`/api/orders/masa/${id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
 
-            // Masa kapatmada dinamik ID:
-            await axios.patch(`http://localhost:3001/api/tables/${id}`, 
-                { durum: 'empty' }, 
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            alert("Ödeme başarılı, masa kapatıldı.");
-            window.location.href = "/masalar";
-        } catch (err) {
-            alert("Hata oluştu!");
-        } finally {
-            setYukleniyor(false);
+        if (aktif) {
+          setSiparis(response.data || { toplam_tutar: 0, urunler: [] });
+          setHata("");
         }
+      } catch (error) {
+        if (!aktif) {
+          return;
+        }
+
+        console.error("Siparis verileri alinamadi:", error);
+        setHata("Masa icin aktif siparis bulunamadi veya odeme verisi yuklenemedi.");
+      }
     };
 
-    return (
+    if (id) {
+      siparisDetayGetir();
+    }
+
+    return () => {
+      aktif = false;
+    };
+  }, [id, token]);
+
+  const odemeYap = async (yontem) => {
+    if (yukleniyor) {
+      return;
+    }
+
+    try {
+      setYukleniyor(true);
+      setHata("");
+
+      await axios.post(
+        "/api/payments",
+        {
+          masa_id: Number(id),
+          odeme_yontemi: yontem,
+          tutar: siparis.toplam_tutar,
+        },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      await axios.patch(
+        `/api/tables/${id}`,
+        { durum: "empty" },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      navigate("/masalar");
+    } catch (error) {
+      console.error("Odeme tamamlanamadi:", error);
+      setHata("Odeme tamamlanamadi. Lutfen servis baglantisini kontrol edin.");
+    } finally {
+      setYukleniyor(false);
+    }
+  };
+
+  return (
     <div className="page-stack">
+      <section className="page-header">
+        <div>
+          <p className="eyebrow">Kasa islemi</p>
+          <h1>Odeme Al</h1>
+          <p>Masa {id} icin acik hesabi kontrol edin ve odeme yontemini secerek islemi tamamlayin.</p>
+        </div>
+      </section>
+
+      {hata ? <div className="error-banner">{hata}</div> : null}
+
       <article className="surface-card">
-        {/* Üst Kısım: Tutar Göstergesi */}
-        <div style={{ marginBottom: '25px', textAlign: 'center' }}>
-          <p className="eyebrow" style={{ marginBottom: '8px' }}>Ödenecek Toplam</p>
-          <h2 style={{ fontSize: '2.8rem', color: '#ffd700', fontWeight: '800' }}>
-            {siparis.toplam_tutar} ₺
-          </h2>
+        <div style={{ marginBottom: 24, textAlign: "center" }}>
+          <p className="eyebrow" style={{ marginBottom: 8 }}>
+            Odenecek toplam
+          </p>
+          <div className="metric-value">{siparis.toplam_tutar || 0} TL</div>
         </div>
 
-        {/* Ayırıcı Çizgi */}
-        <hr style={{ 
-          border: '0', 
-          borderTop: '1px solid rgba(255,255,255,0.1)', 
-          marginBottom: '25px' 
-        }} />
-
-        {/* Orta Kısım: Ödeme Yöntemleri */}
-        <h3 className="section-title" style={{ marginBottom: '15px' }}>Ödeme Yöntemi Seçin</h3>
-        <div className="split-actions" style={{ flexDirection: 'column', gap: '12px' }}>
-          
-          {/* Kredi Kartı Butonu */}
-          <button 
-            className="action-button w-full" 
-            onClick={() => odemeYap('Kredi Kartı')}
-            disabled={yukleniyor}
-          >
-            {yukleniyor ? "Lütfen Bekleyin..." : "💳 Kredi Kartı"}
-          </button>
-
-          {/* Nakit Butonu */}
-          <button 
-            className="action-button w-full" 
-            onClick={() => odemeYap('Nakit')}
-            disabled={yukleniyor}
-          >
-            {yukleniyor ? "İşlem Yapılıyor..." : "💵 Nakit Ödeme"}
-          </button>
-
-          {/* Mobil Ödeme Butonu */}
-          <button 
-            className="ghost-button w-full" 
-            onClick={() => odemeYap('Mobil')}
-            disabled={yukleniyor}
-          >
-            {yukleniyor ? "Bağlanıyor..." : "📱 Mobil Ödeme"}
-          </button>
-
+        <div className="table-shell" style={{ marginBottom: 24 }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Urun</th>
+                <th>Miktar</th>
+                <th>Tutar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(siparis.urunler || []).length ? (
+                siparis.urunler.map((urun, index) => (
+                  <tr key={`${urun.id || urun.ad || "urun"}-${index}`}>
+                    <td>{urun.ad || "Urun"}</td>
+                    <td>{urun.miktar || 1}</td>
+                    <td>{urun.tutar || urun.fiyat || 0} TL</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3">Bu masa icin kalem detayi bulunamadi.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
-        {/* Alt Bilgi: Masa Bilgisi */}
-        <div style={{ marginTop: '20px', textAlign: 'center', opacity: '0.6' }}>
-           <p className="eyebrow">Masa ID: {id}</p>
+        <h3 className="section-title">Odeme yontemi secin</h3>
+        <div className="split-actions">
+          {odemeSecenekleri.map((secenek) => (
+            <button
+              key={secenek.key}
+              className={secenek.style}
+              type="button"
+              onClick={() => odemeYap(secenek.value)}
+              disabled={yukleniyor}
+            >
+              {yukleniyor ? "Islem suruyor..." : secenek.label}
+            </button>
+          ))}
         </div>
       </article>
     </div>

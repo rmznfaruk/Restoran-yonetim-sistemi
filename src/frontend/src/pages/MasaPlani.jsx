@@ -1,43 +1,121 @@
-import React, { useState, useEffect } from "react"; // useEffect eklendi
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import axios from 'axios'; // axios eklendi
+
+const fallbackMasalar = [
+  { id: 101, no: "Masa 101", durum: "bos", kapasite: 4 },
+  { id: 102, no: "Masa 102", durum: "dolu", kapasite: 2 },
+  { id: 103, no: "Masa 103", durum: "rezerveli", kapasite: 6 },
+  { id: 104, no: "Masa 104", durum: "temizleniyor", kapasite: 4 },
+  { id: 105, no: "Masa 105", durum: "bos", kapasite: 8 },
+  { id: 106, no: "Masa 106", durum: "dolu", kapasite: 2 },
+];
 
 const durumRengi = {
-  boş: "#2f7d5c",
+  bos: "#2f7d5c",
   dolu: "#b84d4d",
   rezerveli: "#d7b66f",
   temizleniyor: "#6f7b52",
 };
 
+const durumEtiketleri = {
+  bos: "Bos",
+  dolu: "Dolu",
+  rezerveli: "Rezerveli",
+  temizleniyor: "Temizleniyor",
+};
+
+const durumEslesmeleri = {
+  available: "bos",
+  empty: "bos",
+  occupied: "dolu",
+  full: "dolu",
+  reserved: "rezerveli",
+  cleaning: "temizleniyor",
+};
+
+const haritayaCevir = (masa) => {
+  const hamDurum = (masa?.durum || "").toString().toLowerCase();
+  const durum = durumEslesmeleri[hamDurum] || hamDurum || "bos";
+  const masaNo = masa?.masa_no || masa?.no || masa?.ad || masa?.id;
+
+  return {
+    id: masa.id,
+    no: typeof masaNo === "number" ? `Masa ${masaNo}` : `${masaNo}`,
+    durum,
+    kapasite: Number(masa?.kapasite || 0),
+  };
+};
+
 const MasaPlani = () => {
   const navigate = useNavigate();
-  // Başlangıçta boş dizi, veriler Yusuf'tan gelecek
-  const [masalar, setMasalar] = useState([]); 
-  const token = localStorage.getItem('token');
+  const rawUser = localStorage.getItem("rysUser");
+  const user = rawUser ? JSON.parse(rawUser) : null;
+  const token = localStorage.getItem("token");
+  const [masalar, setMasalar] = useState(fallbackMasalar);
+  const [ornekVeri, setOrnekVeri] = useState(true);
 
-  // 2. ADIM: Yusuf'un backend'inden masaları çekme
   useEffect(() => {
+    let aktif = true;
+
     const masalariGetir = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/tables', {
-          headers: { Authorization: `Bearer ${token}` }
+        const response = await axios.get("/api/tables", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        setMasalar(response.data);
-      } catch (err) {
-        console.error("Masa verileri çekilemedi, statik veriler gösteriliyor.");
-        // Hata durumunda sistemin çökmemesi için senin verileri yedek olarak kullanabiliriz
+
+        if (!aktif) {
+          return;
+        }
+
+        const gelenMasalar = Array.isArray(response.data)
+          ? response.data.map(haritayaCevir)
+          : [];
+
+        if (gelenMasalar.length) {
+          setMasalar(gelenMasalar);
+          setOrnekVeri(false);
+        }
+      } catch (error) {
+        if (!aktif) {
+          return;
+        }
+
+        console.warn("Masa verileri alinamadi, ornek gorunum kullaniliyor:", error.message);
+        setOrnekVeri(true);
       }
     };
-    if (token) masalariGetir();
+
+    masalariGetir();
+
+    return () => {
+      aktif = false;
+    };
   }, [token]);
+
+  const kartaTikla = (masa) => {
+    const kasayaYonelebilir = user?.rol === "kasiyer" || user?.rol === "yonetici";
+
+    if (kasayaYonelebilir && masa.durum !== "bos") {
+      navigate(`/odeme/${masa.id}`);
+      return;
+    }
+
+    navigate(`/siparis?masaId=${masa.id}`);
+  };
 
   return (
     <div className="page-stack">
       <section className="page-header">
         <div>
-          <p className="eyebrow">Salon görünümü</p>
-          <h1>Masa Planı</h1>
-          <p>Anlık masa durumlarını görün, sipariş akışına doğrudan geçin.</p>
+          <p className="eyebrow">Salon gorunumu</p>
+          <h1>Masa Plani</h1>
+          <p>Anlik masa durumlarini gorun, siparis ve odeme akisina dogrudan gecin.</p>
+        </div>
+        <div className="header-actions">
+          <span className={ornekVeri ? "pill pill--warning" : "pill pill--success"}>
+            {ornekVeri ? "Ornek veri" : "Canli masa verisi"}
+          </span>
         </div>
       </section>
 
@@ -46,19 +124,21 @@ const MasaPlani = () => {
           <article
             key={masa.id}
             className="table-card"
-            // Backend'den gelen durum "available" ise "boş", "occupied" ise "dolu" olarak eşleşmeli
-            style={{ borderTop: `8px solid ${durumRengi[masa.durum] || '#ccc'}` }}
-            // Tıklandığında o masanın ID'si ile ödeme veya sipariş ekranına gider
-            onClick={() => navigate(`/odeme/${masa.id}`)} 
+            style={{ borderTop: `8px solid ${durumRengi[masa.durum] || "#7a6f64"}` }}
+            onClick={() => kartaTikla(masa)}
           >
-            <p className="eyebrow" style={{ color: "rgba(255,255,255,0.65)" }}>{masa.no}</p>
-            <h3>{masa.kapasite} kişilik</h3>
+            <p className="eyebrow" style={{ color: "rgba(255,255,255,0.65)" }}>
+              {masa.no}
+            </p>
+            <h3>{masa.kapasite} kisilik</h3>
             <p style={{ color: "rgba(255,255,255,0.76)" }}>
-              Sipariş ve ödeme işlemleri için dokunun.
+              {masa.durum === "bos"
+                ? "Siparis ekranina hizli gecis icin karta dokunun."
+                : "Acilmis hesaplari odeme ya da siparis akisina yonlendirmek icin karta dokunun."}
             </p>
             <div className="table-card__status">
               <span className="pill" style={{ background: "rgba(255,255,255,0.16)", color: "white" }}>
-                {masa.durum}
+                {durumEtiketleri[masa.durum] || masa.durum}
               </span>
             </div>
           </article>
