@@ -2,6 +2,14 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db/pool");
 const { sendStockAlert } = require("../services/emailService");
+const {
+  createProduct,
+  deleteProduct,
+  listCategories,
+  listProducts,
+  updateProduct,
+  updateProductStock,
+} = require("../services/demoStore");
 
 const varsayilanKritikSeviye = 10;
 
@@ -35,6 +43,7 @@ function urunSatiriBicimlendir(urun) {
     stok: Number(urun.stok ?? urun.stok_miktar ?? 0),
     stok_miktar: Number(urun.stok_miktar ?? urun.stok ?? 0),
     kritik_seviye: Number(urun.kritik_seviye ?? varsayilanKritikSeviye),
+    kritikSeviye: Number(urun.kritikSeviye ?? urun.kritik_seviye ?? varsayilanKritikSeviye),
     fiyat: Number(urun.fiyat ?? 0),
   };
 }
@@ -44,7 +53,8 @@ router.get("/categories", async (_req, res) => {
     const result = await pool.query("SELECT * FROM kategoriler ORDER BY id ASC");
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.warn("Products API fallback kategori listeleme kullandi:", err.message);
+    res.json(listCategories());
   }
 });
 
@@ -72,7 +82,8 @@ router.get("/", async (req, res) => {
     const result = await pool.query(query, params);
     res.json(result.rows.map(urunSatiriBicimlendir));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.warn("Products API fallback urun listeleme kullandi:", err.message);
+    res.json(listProducts({ kategoriId }).map(urunSatiriBicimlendir));
   }
 });
 
@@ -109,14 +120,7 @@ router.post("/", async (req, res) => {
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *
       `,
-      [
-        kategoriId,
-        ad,
-        Number(fiyat),
-        stokMiktar,
-        kritikSeviye,
-        mevcut !== false,
-      ]
+      [kategoriId, ad, Number(fiyat), stokMiktar, kritikSeviye, mevcut !== false]
     );
 
     const yeniUrun = result.rows[0];
@@ -135,7 +139,18 @@ router.post("/", async (req, res) => {
       })
     );
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.warn("Products API fallback urun ekleme kullandi:", err.message);
+    const yeniUrun = createProduct({
+      ad,
+      fiyat,
+      kategori,
+      kategori_id: kategoriIdGelen,
+      stok,
+      stok_miktar: stokMiktarGelen,
+      kritik_seviye: kritikSeviyeGelen,
+      mevcut,
+    });
+    res.status(201).json(urunSatiriBicimlendir(yeniUrun));
   }
 });
 
@@ -148,10 +163,16 @@ router.patch("/:id", async (req, res) => {
       "UPDATE urunler SET ad = COALESCE($1, ad), fiyat = COALESCE($2, fiyat), mevcut = COALESCE($3, mevcut) WHERE id = $4 RETURNING *",
       [ad, fiyat, mevcut, id]
     );
-
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.warn("Products API fallback urun guncelleme kullandi:", err.message);
+    const guncelUrun = updateProduct(id, { ad, fiyat, mevcut });
+
+    if (!guncelUrun) {
+      return res.status(404).json({ error: "Urun bulunamadi." });
+    }
+
+    res.json(urunSatiriBicimlendir(guncelUrun));
   }
 });
 
@@ -173,7 +194,18 @@ router.patch("/:id/stok", async (req, res) => {
 
     res.json(urunSatiriBicimlendir(guncelUrun));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.warn("Products API fallback stok guncelleme kullandi:", err.message);
+    const guncelUrun = updateProductStock(id, stok_miktar);
+
+    if (!guncelUrun) {
+      return res.status(404).json({ error: "Urun bulunamadi." });
+    }
+
+    if (guncelUrun.stok_miktar <= guncelUrun.kritik_seviye) {
+      sendStockAlert(guncelUrun.ad, guncelUrun.stok_miktar);
+    }
+
+    res.json(urunSatiriBicimlendir(guncelUrun));
   }
 });
 
@@ -189,7 +221,14 @@ router.delete("/:id", async (req, res) => {
 
     res.json({ mesaj: "Urun silindi.", urun: result.rows[0] });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.warn("Products API fallback urun silme kullandi:", err.message);
+    const silinenUrun = deleteProduct(id);
+
+    if (!silinenUrun) {
+      return res.status(404).json({ error: "Urun bulunamadi." });
+    }
+
+    res.json({ mesaj: "Urun silindi.", urun: urunSatiriBicimlendir(silinenUrun) });
   }
 });
 
