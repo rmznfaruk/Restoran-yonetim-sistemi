@@ -1,5 +1,5 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 
 const rolRozetleri = {
   yonetici: "pill pill--warning",
@@ -9,10 +9,17 @@ const rolRozetleri = {
 };
 
 const Navbar = ({ navigationItems, onLogout }) => {
+  const location = useLocation();
   const rawUser = localStorage.getItem("rysUser");
   const user = rawUser ? JSON.parse(rawUser) : null;
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
+    setIsMenuOpen(false);
     onLogout?.();
   };
 
@@ -32,7 +39,23 @@ const Navbar = ({ navigationItems, onLogout }) => {
         </div>
       </div>
 
-      <nav className="topnav">
+      <button
+        className={`menu-toggle${isMenuOpen ? " menu-toggle--open" : ""}`}
+        type="button"
+        onClick={() => setIsMenuOpen((current) => !current)}
+        aria-expanded={isMenuOpen}
+        aria-controls="primary-navigation"
+        aria-label={isMenuOpen ? "Menuyu kapat" : "Menuyu ac"}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+
+      <nav
+        id="primary-navigation"
+        className={`topnav${isMenuOpen ? " topnav--open" : ""}`}
+      >
         {navigationItems.map((item) => (
           <NavLink
             key={item.to}
@@ -40,6 +63,7 @@ const Navbar = ({ navigationItems, onLogout }) => {
               isActive ? "topnav-link topnav-link--active" : "topnav-link"
             }
             to={item.to}
+            onClick={() => setIsMenuOpen(false)}
           >
             {item.label}
           </NavLink>

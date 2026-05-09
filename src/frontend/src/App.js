@@ -197,10 +197,10 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/odeme"
+          path="/odeme/:id"
           element={
             <KorunanRota izinliRoller={["kasiyer", "yonetici"]}>
-              <UygulamaKabugu>
+              <UygulamaKabugu onLogout={handleLogout}>
                 <OdemeEkrani />
               </UygulamaKabugu>
             </KorunanRota>

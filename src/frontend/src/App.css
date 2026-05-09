@@ -54,6 +54,7 @@ select {
   top: 16px;
   z-index: 20;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 24px;
   align-items: center;
@@ -70,6 +71,7 @@ select {
   align-items: center;
   gap: 16px;
   min-width: 260px;
+  flex: 1;
 }
 
 .brand-mark {
@@ -118,6 +120,42 @@ select {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
+  flex: 1 1 420px;
+}
+
+.menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+}
+
+.menu-toggle span {
+  width: 22px;
+  height: 2px;
+  margin-inline: auto;
+  border-radius: 999px;
+  background: white;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.menu-toggle--open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.menu-toggle--open span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle--open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 .topnav-link,
@@ -767,8 +805,20 @@ select {
     position: static;
   }
 
+  .menu-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
   .topnav {
+    display: none;
+    width: 100%;
+    flex-basis: 100%;
     justify-content: flex-start;
+  }
+
+  .topnav--open {
+    display: flex;
   }
 
   .panel-heading {
@@ -781,11 +831,83 @@ select {
     padding: 14px;
   }
 
+  .brand-block {
+    min-width: 0;
+    align-items: flex-start;
+  }
+
+  .brand-mark {
+    width: 48px;
+    height: 48px;
+  }
+
+  .topbar {
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .topbar-user {
+    flex-wrap: wrap;
+  }
+
   .page-header,
   .surface-card,
   .login-shell,
   .hero-panel {
     padding: 18px;
+  }
+
+  .page-header {
+    align-items: stretch;
+  }
+
+  .header-actions,
+  .toolbar,
+  .split-actions {
+    flex-direction: column;
+  }
+
+  .header-actions > *,
+  .toolbar > *,
+  .split-actions > * {
+    width: 100%;
+  }
+
+  .topnav-link,
+  .topbar-button,
+  .action-button,
+  .ghost-button,
+  .inline-action {
+    width: 100%;
+  }
+
+  .dashboard-hero-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .status-row,
+  .activity-item,
+  .cart-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .quantity-controls {
+    width: 100%;
+    grid-auto-flow: column;
+    justify-content: space-between;
+  }
+
+  .category-tabs {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .product-grid,
+  .ticket-grid,
+  .cards-grid,
+  .dashboard-grid,
+  .dashboard-metric-grid {
+    grid-template-columns: 1fr;
   }
 
   .data-table th,
