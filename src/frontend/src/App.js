@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import "./App.css";
 
@@ -10,24 +10,33 @@ import KullaniciYonetimi from "./pages/KullaniciYonetimi";
 import LoginPage from "./pages/LoginPage";
 import MasaPlani from "./pages/MasaPlani";
 import MenuYonetimi from "./pages/MenuYonetimi";
+import OdemeEkrani from "./pages/OdemeEkrani";
 import RaporEkrani from "./pages/RaporEkrani";
 import RezervasyonEkrani from "./pages/RezervasjonEkrani";
 import SiparisGirisi from "./pages/SiparisGirisi";
 import StokTakip from "./pages/StokTakip";
 import YonetimPaneli from "./pages/YonetimPaneli";
-import OdemeEkrani from './pages/OdemeEkrani';
 
 const navigationItems = [
-  { to: "/yonetim", label: "Panel" },
-  { to: "/kullanici", label: "Kullanicilar" },
-  { to: "/menu", label: "Menu" },
-  { to: "/stok", label: "Stok" },
-  { to: "/masalar", label: "Masalar" },
-  { to: "/rezervasyon", label: "Rezervasyon" },
-  { to: "/siparis", label: "Siparis" },
-  { to: "/kds", label: "KDS" },
-  { to: "/rapor", label: "Raporlar" },
+  { to: "/yonetim", label: "Panel", roles: ["yonetici"] },
+  { to: "/kullanici", label: "Kullanicilar", roles: ["yonetici"] },
+  { to: "/menu", label: "Menu", roles: ["yonetici"] },
+  { to: "/stok", label: "Stok", roles: ["yonetici"] },
+  { to: "/masalar", label: "Masalar", roles: ["garson", "kasiyer", "yonetici"] },
+  { to: "/rezervasyon", label: "Rezervasyon", roles: ["garson", "yonetici"] },
+  { to: "/siparis", label: "Siparis", roles: ["garson", "yonetici"] },
+  { to: "/kds", label: "KDS", roles: ["mutfak", "yonetici"] },
+  { to: "/rapor", label: "Raporlar", roles: ["yonetici"] },
 ];
+
+const roleLandingPaths = {
+  yonetici: "/yonetim",
+  garson: "/masalar",
+  kasiyer: "/masalar",
+  mutfak: "/kds",
+};
+
+const getLandingPath = (user) => roleLandingPaths[user?.rol] || "/";
 
 const YetkisizEkran = () => (
   <div className="page-stack">
@@ -41,12 +50,26 @@ const YetkisizEkran = () => (
   </div>
 );
 
-const UygulamaKabugu = ({ children, onLogout }) => (
-  <div className="app-shell">
-    <Navbar navigationItems={navigationItems} onLogout={onLogout} />
-    <main className="content-shell">{children}</main>
-  </div>
-);
+const UygulamaKabugu = ({ children, onLogout, user }) => {
+  const gorunurNavigasyon = useMemo(() => {
+    if (!user?.rol) {
+      return [];
+    }
+
+    if (user.rol === "yonetici") {
+      return navigationItems;
+    }
+
+    return navigationItems.filter((item) => item.roles.includes(user.rol));
+  }, [user]);
+
+  return (
+    <div className="app-shell">
+      <Navbar navigationItems={gorunurNavigasyon} onLogout={onLogout} />
+      <main className="content-shell">{children}</main>
+    </div>
+  );
+};
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -61,6 +84,7 @@ function AppRoutes() {
   });
 
   const isAuthenticated = Boolean(authState.token);
+  const landingPath = getLandingPath(authState.user);
 
   const handleLogin = (payload) => {
     localStorage.setItem("token", payload.token);
@@ -77,145 +101,145 @@ function AppRoutes() {
 
   return (
     <Routes>
-        <Route
-          path="/"
-          element={
-            isAuthenticated ? (
-              <Navigate to="/yonetim" replace />
-            ) : (
-              <div className="app-shell">
-                <main className="content-shell">
-                  <LoginPage onLogin={handleLogin} isAuthenticated={isAuthenticated} />
-                </main>
-              </div>
-            )
-          }
-        />
-        <Route
-          path="/kayit"
-          element={
-            isAuthenticated ? (
-              <Navigate to="/yonetim" replace />
-            ) : (
-              <div className="app-shell">
-                <main className="content-shell">
-                  <KayitPage />
-                </main>
-              </div>
-            )
-          }
-        />
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? (
+            <Navigate to={landingPath} replace />
+          ) : (
+            <div className="app-shell">
+              <main className="content-shell">
+                <LoginPage onLogin={handleLogin} isAuthenticated={isAuthenticated} />
+              </main>
+            </div>
+          )
+        }
+      />
+      <Route
+        path="/kayit"
+        element={
+          isAuthenticated ? (
+            <Navigate to={landingPath} replace />
+          ) : (
+            <div className="app-shell">
+              <main className="content-shell">
+                <KayitPage />
+              </main>
+            </div>
+          )
+        }
+      />
 
-        <Route
-          path="/yonetim"
-          element={
-            <KorunanRota izinliRoller={["yonetici"]}>
-              <UygulamaKabugu onLogout={handleLogout}>
-                <YonetimPaneli />
-              </UygulamaKabugu>
-            </KorunanRota>
-          }
-        />
-        <Route
-          path="/kullanici"
-          element={
-            <KorunanRota izinliRoller={["yonetici"]}>
-              <UygulamaKabugu onLogout={handleLogout}>
-                <KullaniciYonetimi />
-              </UygulamaKabugu>
-            </KorunanRota>
-          }
-        />
-        <Route
-          path="/menu"
-          element={
-            <KorunanRota izinliRoller={["yonetici"]}>
-              <UygulamaKabugu onLogout={handleLogout}>
-                <MenuYonetimi />
-              </UygulamaKabugu>
-            </KorunanRota>
-          }
-        />
-        <Route
-          path="/stok"
-          element={
-            <KorunanRota izinliRoller={["yonetici"]}>
-              <UygulamaKabugu onLogout={handleLogout}>
-                <StokTakip />
-              </UygulamaKabugu>
-            </KorunanRota>
-          }
-        />
-        <Route
-          path="/masalar"
-          element={
-            <KorunanRota izinliRoller={["garson", "yonetici"]}>
-              <UygulamaKabugu onLogout={handleLogout}>
-                <MasaPlani />
-              </UygulamaKabugu>
-            </KorunanRota>
-          }
-        />
-        <Route
-          path="/siparis"
-          element={
-            <KorunanRota izinliRoller={["garson", "yonetici"]}>
-              <UygulamaKabugu onLogout={handleLogout}>
-                <SiparisGirisi />
-              </UygulamaKabugu>
-            </KorunanRota>
-          }
-        />
-        <Route
-          path="/rezervasyon"
-          element={
-            <KorunanRota izinliRoller={["garson", "yonetici"]}>
-              <UygulamaKabugu onLogout={handleLogout}>
-                <RezervasyonEkrani />
-              </UygulamaKabugu>
-            </KorunanRota>
-          }
-        />
-        <Route
-          path="/kds"
-          element={
-            <KorunanRota izinliRoller={["mutfak", "yonetici"]}>
-              <UygulamaKabugu onLogout={handleLogout}>
-                <KDSEkrani />
-              </UygulamaKabugu>
-            </KorunanRota>
-          }
-        />
-        <Route
-          path="/rapor"
-          element={
-            <KorunanRota izinliRoller={["yonetici"]}>
-              <UygulamaKabugu onLogout={handleLogout}>
-                <RaporEkrani />
-              </UygulamaKabugu>
-            </KorunanRota>
-          }
-        />
-        <Route
-          path="/odeme/:id"
-          element={
-            <KorunanRota izinliRoller={["kasiyer", "yonetici"]}>
-              <UygulamaKabugu onLogout={handleLogout}>
-                <OdemeEkrani />
-              </UygulamaKabugu>
-            </KorunanRota>
-          }
-        />
-        <Route
-          path="/yetkisiz"
-          element={
-            <UygulamaKabugu onLogout={handleLogout}>
-              <YetkisizEkran />
+      <Route
+        path="/yonetim"
+        element={
+          <KorunanRota izinliRoller={["yonetici"]}>
+            <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+              <YonetimPaneli />
             </UygulamaKabugu>
-          }
-        />
-        <Route path="*" element={<Navigate to={isAuthenticated ? "/yonetim" : "/"} replace />} />
-      </Routes>
+          </KorunanRota>
+        }
+      />
+      <Route
+        path="/kullanici"
+        element={
+          <KorunanRota izinliRoller={["yonetici"]}>
+            <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+              <KullaniciYonetimi />
+            </UygulamaKabugu>
+          </KorunanRota>
+        }
+      />
+      <Route
+        path="/menu"
+        element={
+          <KorunanRota izinliRoller={["yonetici"]}>
+            <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+              <MenuYonetimi />
+            </UygulamaKabugu>
+          </KorunanRota>
+        }
+      />
+      <Route
+        path="/stok"
+        element={
+          <KorunanRota izinliRoller={["yonetici"]}>
+            <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+              <StokTakip />
+            </UygulamaKabugu>
+          </KorunanRota>
+        }
+      />
+      <Route
+        path="/masalar"
+        element={
+          <KorunanRota izinliRoller={["garson", "kasiyer", "yonetici"]}>
+            <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+              <MasaPlani />
+            </UygulamaKabugu>
+          </KorunanRota>
+        }
+      />
+      <Route
+        path="/siparis"
+        element={
+          <KorunanRota izinliRoller={["garson", "yonetici"]}>
+            <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+              <SiparisGirisi />
+            </UygulamaKabugu>
+          </KorunanRota>
+        }
+      />
+      <Route
+        path="/rezervasyon"
+        element={
+          <KorunanRota izinliRoller={["garson", "yonetici"]}>
+            <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+              <RezervasyonEkrani />
+            </UygulamaKabugu>
+          </KorunanRota>
+        }
+      />
+      <Route
+        path="/kds"
+        element={
+          <KorunanRota izinliRoller={["mutfak", "yonetici"]}>
+            <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+              <KDSEkrani />
+            </UygulamaKabugu>
+          </KorunanRota>
+        }
+      />
+      <Route
+        path="/rapor"
+        element={
+          <KorunanRota izinliRoller={["yonetici"]}>
+            <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+              <RaporEkrani />
+            </UygulamaKabugu>
+          </KorunanRota>
+        }
+      />
+      <Route
+        path="/odeme/:id"
+        element={
+          <KorunanRota izinliRoller={["kasiyer", "yonetici"]}>
+            <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+              <OdemeEkrani />
+            </UygulamaKabugu>
+          </KorunanRota>
+        }
+      />
+      <Route
+        path="/yetkisiz"
+        element={
+          <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+            <YetkisizEkran />
+          </UygulamaKabugu>
+        }
+      />
+      <Route path="*" element={<Navigate to={isAuthenticated ? landingPath : "/"} replace />} />
+    </Routes>
   );
 }
 
