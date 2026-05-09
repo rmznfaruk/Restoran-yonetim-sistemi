@@ -10,16 +10,29 @@ const odemeYontemiEslesmeleri = {
   mobil: "mobil",
 };
 
+const masaDurumuEslesmeleri = {
+  bos: "bos",
+  empty: "bos",
+  temizleniyor: "temizleniyor",
+  cleaning: "temizleniyor",
+};
+
 const normalizeOdemeYontemi = (deger) => {
   const anahtar = String(deger || "").trim().toLowerCase();
   return odemeYontemiEslesmeleri[anahtar] || "kart";
 };
 
+const normalizeMasaDurumu = (deger) => {
+  const anahtar = String(deger || "").trim().toLowerCase();
+  return masaDurumuEslesmeleri[anahtar] || "temizleniyor";
+};
+
 router.post("/", async (req, res) => {
-  const { siparis_id, tutar, odeme_yontemi, masa_id } = req.body;
+  const { siparis_id, tutar, odeme_yontemi, masa_id, masa_durumu } = req.body;
   const client = await pool.connect().catch(() => null);
 
   const normalizedMethod = normalizeOdemeYontemi(odeme_yontemi);
+  const normalizedTableStatus = normalizeMasaDurumu(masa_durumu);
 
   if (!client) {
     const odeme = createPayment({
@@ -27,6 +40,7 @@ router.post("/", async (req, res) => {
       masa_id,
       odeme_yontemi: normalizedMethod,
       tutar,
+      masa_durumu: normalizedTableStatus,
     });
 
     if (!odeme) {
@@ -66,7 +80,7 @@ router.post("/", async (req, res) => {
     );
 
     if (masa_id) {
-      await client.query("UPDATE masalar SET durum = 'temizleniyor' WHERE id = $1", [masa_id]);
+      await client.query("UPDATE masalar SET durum = $1 WHERE id = $2", [normalizedTableStatus, masa_id]);
     }
 
     await client.query("COMMIT");
@@ -80,6 +94,7 @@ router.post("/", async (req, res) => {
       masa_id,
       odeme_yontemi: normalizedMethod,
       tutar,
+      masa_durumu: normalizedTableStatus,
     });
 
     if (!odeme) {

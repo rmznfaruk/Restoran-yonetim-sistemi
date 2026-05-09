@@ -18,26 +18,42 @@ const fallbackUrunler = [
   { id: 5, ad: "Sutlac", fiyat: 90, kategori_adi: "Tatli", mevcut: true },
 ];
 
+const fallbackMasalar = [
+  { id: 1, masa_no: 1, durum: "bos", kapasite: 4 },
+  { id: 3, masa_no: 3, durum: "rezerveli", kapasite: 6 },
+  { id: 5, masa_no: 5, durum: "bos", kapasite: 2 },
+];
+
+const uygunMasaMi = (masa) => masa?.durum === "bos" || masa?.durum === "rezerveli";
+
 function SiparisGirisi() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const masaId = searchParams.get("masaId") || "Secilmedi";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const ilkMasaId = searchParams.get("masaId") || "";
 
   const [kategoriler, setKategoriler] = useState(fallbackKategoriler);
   const [urunler, setUrunler] = useState(fallbackUrunler);
+  const [masalar, setMasalar] = useState(fallbackMasalar);
+  const [seciliMasaId, setSeciliMasaId] = useState(ilkMasaId);
   const [aktifKategori, setAktifKategori] = useState(fallbackKategoriler[0].ad);
   const [sepet, setSepet] = useState([]);
   const [kaydediliyor, setKaydediliyor] = useState(false);
   const [hata, setHata] = useState("");
+  const [bilgi, setBilgi] = useState("");
+
+  useEffect(() => {
+    setSeciliMasaId(searchParams.get("masaId") || "");
+  }, [searchParams]);
 
   useEffect(() => {
     let aktif = true;
 
     async function verileriGetir() {
       try {
-        const [kategoriRes, urunRes] = await Promise.all([
+        const [kategoriRes, urunRes, masaRes] = await Promise.all([
           axios.get("/api/products/categories"),
           axios.get("/api/products"),
+          axios.get("/api/tables"),
         ]);
 
         if (!aktif) {
@@ -57,6 +73,8 @@ function SiparisGirisi() {
           mevcut: urun.mevcut !== false,
         }));
 
+        const gelenMasalar = (masaRes.data || []).filter(uygunMasaMi);
+
         if (gelenKategoriler?.length) {
           setKategoriler(gelenKategoriler);
           setAktifKategori(gelenKategoriler[0].ad);
@@ -66,11 +84,20 @@ function SiparisGirisi() {
           setUrunler(gelenUrunler);
         }
 
+        if (gelenMasalar.length) {
+          setMasalar(gelenMasalar);
+
+          if (!ilkMasaId) {
+            setBilgi("Siparis ekranindan dogrudan masa secip isleme devam edebilirsiniz.");
+          }
+        }
+
         setHata("");
       } catch (error) {
         console.error("Siparis verileri alinamadi:", error);
         if (aktif) {
-          setHata("Canli urun verisi alinamadi, varsayilan liste gosteriliyor.");
+          setMasalar(fallbackMasalar);
+          setHata("Canli veri alinamadi, varsayilan liste gosteriliyor.");
         }
       }
     }
@@ -80,7 +107,12 @@ function SiparisGirisi() {
     return () => {
       aktif = false;
     };
-  }, []);
+  }, [ilkMasaId]);
+
+  const seciliMasa = useMemo(
+    () => masalar.find((masa) => String(masa.id) === String(seciliMasaId)) || null,
+    [masalar, seciliMasaId]
+  );
 
   const filtreliUrunler = useMemo(
     () => urunler.filter((urun) => urun.kategori_adi === aktifKategori && urun.mevcut !== false),
@@ -91,6 +123,19 @@ function SiparisGirisi() {
     () => sepet.reduce((toplam, kalem) => toplam + kalem.fiyat * kalem.miktar, 0),
     [sepet]
   );
+
+  const masaSec = (yeniMasaId) => {
+    setSeciliMasaId(yeniMasaId);
+    setBilgi("");
+    setHata("");
+
+    if (yeniMasaId) {
+      setSearchParams({ masaId: yeniMasaId });
+      return;
+    }
+
+    setSearchParams({});
+  };
 
   const sepeteEkle = (urun) => {
     setSepet((oncekiSepet) => {
@@ -122,17 +167,18 @@ function SiparisGirisi() {
       return;
     }
 
-    if (masaId === "Secilmedi") {
-      setHata("Siparis acmak icin once masa plani ekranindan bir masa secin.");
+    if (!seciliMasaId) {
+      setHata("Siparis acmak icin once bir masa secin.");
       return;
     }
 
     try {
       setKaydediliyor(true);
       setHata("");
+      setBilgi("");
 
       await axios.post("/api/orders", {
-        masa_id: Number(masaId),
+        masa_id: Number(seciliMasaId),
         urunler: sepet.map((kalem) => ({
           id: kalem.id,
           miktar: kalem.miktar,
@@ -155,7 +201,11 @@ function SiparisGirisi() {
         <div>
           <p className="eyebrow">Servis akisi</p>
           <h1>Siparis Girisi</h1>
-          <p>Masa {masaId} icin kategori secin, urunleri sepete ekleyin ve siparisi tek adimda olusturun.</p>
+          <p>
+            {seciliMasa
+              ? `Masa ${seciliMasa.masa_no || seciliMasa.id} icin kategori secin, urunleri sepete ekleyin ve siparisi tek adimda olusturun.`
+              : "Bu ekrandan once masa secip sonra urunleri sepete ekleyebilirsiniz."}
+          </p>
         </div>
         <div className="header-actions">
           <button className="ghost-button" type="button" onClick={() => navigate("/masalar")}>
@@ -167,6 +217,7 @@ function SiparisGirisi() {
         </div>
       </section>
 
+      {bilgi ? <div className="info-banner">{bilgi}</div> : null}
       {hata ? <div className="error-banner">{hata}</div> : null}
 
       <section className="grid-layout">
@@ -199,8 +250,26 @@ function SiparisGirisi() {
 
         <aside className="surface-card order-sidebar">
           <p className="eyebrow">Aktif masa</p>
-          <h3>Masa {masaId}</h3>
-          <p className="helper-text">Eklenen urunler asagida ozetlenir. Miktarlari bu panelden duzenleyebilirsiniz.</p>
+          <h3>{seciliMasa ? `Masa ${seciliMasa.masa_no || seciliMasa.id}` : "Masa secilmedi"}</h3>
+          <p className="helper-text">
+            Bos veya rezerveli masalardan birini secip siparisi bu panelden tamamlayabilirsiniz.
+          </p>
+
+          <div>
+            <label className="field-label">Masa secin</label>
+            <select
+              className="field-select"
+              value={seciliMasaId}
+              onChange={(e) => masaSec(e.target.value)}
+            >
+              <option value="">Masa secin</option>
+              {masalar.map((masa) => (
+                <option key={masa.id} value={masa.id}>
+                  Masa {masa.masa_no || masa.id} | {masa.durum} | Kapasite {masa.kapasite}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="cart-list">
             {sepet.length ? (

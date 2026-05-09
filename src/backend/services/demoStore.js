@@ -83,7 +83,16 @@ const ensureCategory = (kategoriAdi) => {
   return yeniKategori;
 };
 
-const createProduct = ({ ad, fiyat, kategori, kategori_id, stok = 0, stok_miktar, kritik_seviye = 10, mevcut = true }) => {
+const createProduct = ({
+  ad,
+  fiyat,
+  kategori,
+  kategori_id,
+  stok = 0,
+  stok_miktar,
+  kritik_seviye = 10,
+  mevcut = true,
+}) => {
   const categoryId = kategori_id || ensureCategory(kategori || "Genel").id;
   const yeniUrun = {
     id: nextId(products),
@@ -193,14 +202,16 @@ const orderPublicShape = (order) => {
 const listOrders = () => orders.map(orderPublicShape);
 
 const createOrder = ({ masa_id, urunler }) => {
+  const toplamTutar = (urunler || []).reduce(
+    (sum, item) => sum + Number(item.fiyat || 0) * Number(item.miktar || 0),
+    0
+  );
+
   const yeniSiparis = {
     id: nextId(orders),
     masa_id: Number(masa_id),
     durum: "bekliyor",
-    toplam_tutar: (urunler || []).reduce(
-      (sum, item) => sum + Number(item.fiyat || 0) * Number(item.miktar || 0),
-      0
-    ),
+    toplam_tutar: toplamTutar,
     olusturma_tarihi: nowIso(),
     items: (urunler || []).map((item) => ({
       urun_id: Number(item.id),
@@ -242,7 +253,7 @@ const findActiveOrderByTable = (masaId) =>
       item.durum !== "iptal"
   ) || null;
 
-const createPayment = ({ siparis_id, masa_id, odeme_yontemi, tutar }) => {
+const createPayment = ({ siparis_id, masa_id, odeme_yontemi, tutar, masa_durumu = "temizleniyor" }) => {
   const aktifSiparis =
     orders.find((item) => String(item.id) === String(siparis_id)) ||
     findActiveOrderByTable(masa_id);
@@ -261,7 +272,7 @@ const createPayment = ({ siparis_id, masa_id, odeme_yontemi, tutar }) => {
 
   payments = [odeme, ...payments];
   updateOrder(aktifSiparis.id, { durum: "kapali", toplam_tutar: odeme.tutar });
-  updateTable(aktifSiparis.masa_id, { durum: "temizleniyor" });
+  updateTable(aktifSiparis.masa_id, { durum: masa_durumu });
   return { ...odeme };
 };
 

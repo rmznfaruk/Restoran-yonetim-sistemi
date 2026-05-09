@@ -53,6 +53,10 @@ const OdemeEkrani = () => {
       return;
     }
 
+    const masaTemizlenecekMi = window.confirm(
+      "Odeme tamamlandiginda masa temizlik surecine gecsin mi? Evet dersen durum 'temizleniyor' olur, hayir dersen masa 'bos' olur."
+    );
+
     try {
       setYukleniyor(true);
       setHata("");
@@ -63,15 +67,8 @@ const OdemeEkrani = () => {
           masa_id: Number(id),
           odeme_yontemi: yontem,
           tutar: siparis.toplam_tutar,
+          masa_durumu: masaTemizlenecekMi ? "temizleniyor" : "bos",
         },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
-
-      await axios.patch(
-        `/api/tables/${id}`,
-        { durum: "empty" },
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         }

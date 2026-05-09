@@ -11,6 +11,10 @@ const {
 router.post("/", async (req, res) => {
   const { masa_id, urunler } = req.body;
   const client = await pool.connect().catch(() => null);
+  const toplamTutar = (urunler || []).reduce(
+    (sum, item) => sum + Number(item.fiyat || 0) * Number(item.miktar || 0),
+    0
+  );
 
   if (!client) {
     const yeniSiparis = createOrder({ masa_id, urunler });
@@ -21,8 +25,8 @@ router.post("/", async (req, res) => {
     await client.query("BEGIN");
 
     const siparisResult = await client.query(
-      "INSERT INTO siparisler (masa_id, durum) VALUES ($1, $2) RETURNING id",
-      [masa_id, "bekliyor"]
+      "INSERT INTO siparisler (masa_id, durum, toplam_tutar) VALUES ($1, $2, $3) RETURNING id",
+      [masa_id, "bekliyor", toplamTutar]
     );
     const siparisId = siparisResult.rows[0].id;
 

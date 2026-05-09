@@ -3,9 +3,10 @@ import axios from "axios";
 
 const fallbackMasalar = [
   { id: 1, masa_no: 1, kapasite: 4, durum: "bos" },
-  { id: 2, masa_no: 5, kapasite: 2, durum: "rezerveli" },
   { id: 3, masa_no: 9, kapasite: 6, durum: "bos" },
 ];
+
+const uygunMasalariFiltrele = (liste) => (liste || []).filter((masa) => masa.durum === "bos");
 
 const RezervasyonEkrani = () => {
   const [masalar, setMasalar] = useState(fallbackMasalar);
@@ -16,19 +17,17 @@ const RezervasyonEkrani = () => {
   const [hataMesaji, setHataMesaji] = useState("");
   const [basariMesaji, setBasariMesaji] = useState("");
 
-  useEffect(() => {
-    const masalariGetir = async () => {
-      try {
-        const response = await axios.get("/api/tables");
-        const uygunMasalar = response.data.filter(
-          (masa) => masa.durum === "bos" || masa.durum === "rezerveli"
-        );
-        setMasalar(uygunMasalar);
-      } catch (error) {
-        console.error("Masalar cekilirken hata:", error);
-      }
-    };
+  const masalariGetir = async () => {
+    try {
+      const response = await axios.get("/api/tables");
+      setMasalar(uygunMasalariFiltrele(response.data));
+    } catch (error) {
+      console.error("Masalar cekilirken hata:", error);
+      setMasalar(fallbackMasalar);
+    }
+  };
 
+  useEffect(() => {
     masalariGetir();
   }, []);
 
@@ -45,7 +44,7 @@ const RezervasyonEkrani = () => {
       await axios.patch(`/api/tables/${seciliMasa}`, {
         durum: "rezerveli",
         musteri_adi: musteriAdi,
-        kisi_sayisi: kisiSayisi,
+        kisi_sayisi: Number(kisiSayisi),
         tarih_saat: tarihSaat,
       });
 
@@ -54,12 +53,7 @@ const RezervasyonEkrani = () => {
       setMusteriAdi("");
       setKisiSayisi("");
       setTarihSaat("");
-
-      const response = await axios.get("/api/tables");
-      const uygunMasalar = response.data.filter(
-        (masa) => masa.durum === "bos" || masa.durum === "rezerveli"
-      );
-      setMasalar(uygunMasalar);
+      masalariGetir();
     } catch (error) {
       console.error("Rezervasyon hatasi:", error);
       setHataMesaji("Rezervasyon olusturulurken bir hata oldu.");
@@ -72,7 +66,7 @@ const RezervasyonEkrani = () => {
         <div>
           <p className="eyebrow">Musteri akisi</p>
           <h1>Rezervasyon Ekrani</h1>
-          <p>Uygun masa, kisi sayisi ve zaman bilgisini ayni formda eslestirin.</p>
+          <p>Sadece bos masalar rezervasyon icin secilebilir. Rezerveli masalar yeniden secilemez.</p>
         </div>
       </section>
 
@@ -82,14 +76,10 @@ const RezervasyonEkrani = () => {
           <h3>Yeni rezervasyon olustur</h3>
 
           {hataMesaji ? (
-            <div className="pill pill--warning" style={{ marginBottom: 16, display: "inline-flex" }}>
-              {hataMesaji}
-            </div>
+            <div className="error-banner">{hataMesaji}</div>
           ) : null}
           {basariMesaji ? (
-            <div className="pill pill--success" style={{ marginBottom: 16, display: "inline-flex" }}>
-              {basariMesaji}
-            </div>
+            <div className="info-banner">{basariMesaji}</div>
           ) : null}
 
           <form className="stack-form">
@@ -103,7 +93,7 @@ const RezervasyonEkrani = () => {
                 <option value="">Masa secin</option>
                 {masalar.map((masa) => (
                   <option key={masa.id} value={masa.id}>
-                    Masa {masa.masa_no} | Kapasite {masa.kapasite} | Durum {masa.durum}
+                    Masa {masa.masa_no} | Kapasite {masa.kapasite}
                   </option>
                 ))}
               </select>
@@ -123,6 +113,7 @@ const RezervasyonEkrani = () => {
               <input
                 className="field-input"
                 type="number"
+                min="1"
                 value={kisiSayisi}
                 onChange={(e) => setKisiSayisi(e.target.value)}
               />
@@ -146,17 +137,13 @@ const RezervasyonEkrani = () => {
 
         <article className="surface-card">
           <p className="eyebrow">Hizli bakis</p>
-          <h3>Uygun masa ozeti</h3>
+          <h3>Rezervasyona uygun masalar</h3>
           <div className="card-grid-compact">
             {masalar.map((masa) => (
               <div key={masa.id} className="surface-card" style={{ padding: 18 }}>
                 <p className="eyebrow">Masa {masa.masa_no}</p>
                 <h3>{masa.kapasite} kisilik</h3>
-                <span
-                  className={masa.durum === "bos" ? "pill pill--success" : "pill pill--warning"}
-                >
-                  {masa.durum}
-                </span>
+                <span className="pill pill--success">Bos</span>
               </div>
             ))}
           </div>
