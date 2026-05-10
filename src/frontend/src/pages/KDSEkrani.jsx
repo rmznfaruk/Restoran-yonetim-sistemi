@@ -29,7 +29,7 @@ const KDSEkrani = () => {
     try {
       const response = await axios.get("/api/orders");
       const aktifSiparisler = response.data.filter(
-        (siparis) => siparis.durum !== "kapali" && siparis.durum !== "iptal"
+        (siparis) => siparis.durum === "bekliyor" || siparis.durum === "hazirlaniyor" || siparis.durum === "hazir"
       );
       setSiparisler(aktifSiparisler);
     } catch (error) {
