@@ -13,6 +13,7 @@ import MenuYonetimi from "./pages/MenuYonetimi";
 import OdemeEkrani from "./pages/OdemeEkrani";
 import RaporEkrani from "./pages/RaporEkrani";
 import RezervasyonEkrani from "./pages/RezervasjonEkrani";
+import ServisTakip from "./pages/ServisTakip";
 import SiparisGirisi from "./pages/SiparisGirisi";
 import StokTakip from "./pages/StokTakip";
 import YonetimPaneli from "./pages/YonetimPaneli";
@@ -25,6 +26,7 @@ const navigationItems = [
   { to: "/masalar", label: "Masalar", roles: ["garson", "kasiyer", "yonetici"] },
   { to: "/rezervasyon", label: "Rezervasyon", roles: ["garson", "yonetici"] },
   { to: "/siparis", label: "Siparis", roles: ["garson", "yonetici"] },
+  { to: "/servis", label: "Servis", roles: ["garson", "yonetici"] },
   { to: "/kds", label: "KDS", roles: ["mutfak", "yonetici"] },
   { to: "/rapor", label: "Raporlar", roles: ["yonetici"] },
 ];
@@ -196,6 +198,16 @@ function AppRoutes() {
           <KorunanRota izinliRoller={["garson", "yonetici"]}>
             <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
               <RezervasyonEkrani />
+            </UygulamaKabugu>
+          </KorunanRota>
+        }
+      />
+      <Route
+        path="/servis"
+        element={
+          <KorunanRota izinliRoller={["garson", "yonetici"]}>
+            <UygulamaKabugu onLogout={handleLogout} user={authState.user}>
+              <ServisTakip />
             </UygulamaKabugu>
           </KorunanRota>
         }

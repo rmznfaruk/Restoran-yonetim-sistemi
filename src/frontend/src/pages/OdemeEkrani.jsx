@@ -15,6 +15,7 @@ const OdemeEkrani = () => {
   const [siparis, setSiparis] = useState({ toplam_tutar: 0, urunler: [] });
   const [yukleniyor, setYukleniyor] = useState(false);
   const [hata, setHata] = useState("");
+  const [bekleyenOdemeYontemi, setBekleyenOdemeYontemi] = useState(null);
 
   useEffect(() => {
     let aktif = true;
@@ -48,14 +49,18 @@ const OdemeEkrani = () => {
     };
   }, [id, token]);
 
-  const odemeYap = async (yontem) => {
+  const odemeOnayiAc = (yontem) => {
     if (yukleniyor) {
       return;
     }
 
-    const masaTemizlenecekMi = window.confirm(
-      "Odeme tamamlandiginda masa temizlik surecine gecsin mi? Evet dersen durum 'temizleniyor' olur, hayir dersen masa 'bos' olur."
-    );
+    setBekleyenOdemeYontemi(yontem);
+  };
+
+  const odemeYap = async (masaDurumu) => {
+    if (!bekleyenOdemeYontemi || yukleniyor) {
+      return;
+    }
 
     try {
       setYukleniyor(true);
@@ -65,9 +70,9 @@ const OdemeEkrani = () => {
         "/api/payments",
         {
           masa_id: Number(id),
-          odeme_yontemi: yontem,
+          odeme_yontemi: bekleyenOdemeYontemi,
           tutar: siparis.toplam_tutar,
-          masa_durumu: masaTemizlenecekMi ? "temizleniyor" : "bos",
+          masa_durumu: masaDurumu,
         },
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -80,6 +85,13 @@ const OdemeEkrani = () => {
       setHata("Odeme tamamlanamadi. Lutfen servis baglantisini kontrol edin.");
     } finally {
       setYukleniyor(false);
+      setBekleyenOdemeYontemi(null);
+    }
+  };
+
+  const odemeOnayiKapat = () => {
+    if (!yukleniyor) {
+      setBekleyenOdemeYontemi(null);
     }
   };
 
@@ -137,7 +149,7 @@ const OdemeEkrani = () => {
               key={secenek.key}
               className={secenek.style}
               type="button"
-              onClick={() => odemeYap(secenek.value)}
+              onClick={() => odemeOnayiAc(secenek.value)}
               disabled={yukleniyor}
             >
               {yukleniyor ? "Islem suruyor..." : secenek.label}
@@ -145,6 +157,41 @@ const OdemeEkrani = () => {
           ))}
         </div>
       </article>
+
+      {bekleyenOdemeYontemi ? (
+        <div className="modal-backdrop" role="presentation">
+          <section
+            className="surface-card decision-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="odeme-onayi-baslik"
+          >
+            <p className="eyebrow">Odeme sonrasi masa durumu</p>
+            <h3 id="odeme-onayi-baslik">Masa temizlik surecine gecsin mi?</h3>
+            <p>
+              Odeme tamamlandiginda masa durumunu secin. Temizlige gonderirseniz masa ekip
+              hazirlayana kadar kapali kalir; bos secerseniz hemen yeni siparise acilir.
+            </p>
+
+            <div className="decision-modal__summary">
+              <span>Secilen odeme</span>
+              <strong>{bekleyenOdemeYontemi}</strong>
+            </div>
+
+            <div className="decision-modal__actions">
+              <button className="action-button" type="button" onClick={() => odemeYap("temizleniyor")} disabled={yukleniyor}>
+                Temizlige gonder
+              </button>
+              <button className="ghost-button" type="button" onClick={() => odemeYap("bos")} disabled={yukleniyor}>
+                Masayi bosalt
+              </button>
+              <button className="ghost-button" type="button" onClick={odemeOnayiKapat} disabled={yukleniyor}>
+                Vazgec
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 };
